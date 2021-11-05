@@ -27,12 +27,14 @@ The project will have 3 roles:
 A sample of workflow for a single beneficiary trust:
 
 1. First the Owner needs to connect with its wallet to create a Trust or Will by filling in all required information like time that should pass to release the assets.
-1. Then the Owner will be able to add it beneficiary.
+1. Then the Owner will be able to add a beneficiary.
 1. After that the Owner needs to add the assets (ERC-20 or ERC-721 tokens only).
-1. When the Owner dies or it's unable to access the funds then the beneficiary can connect with it's wallet and send a health notification to the Trust.
-1. The Trust will emit an event to the Owner waiting to X amount of time before releasing the assets.
-1. If the Owner rejects the notification then the process for releasing the assets is cancel.
-1. If the Owner doesn't answer this will be taken as valid to release the assets.
+1. The Owner needs to keep doing a checking within the amount of time selected at the time of creating the Trust or Will.
+1. If the Owner dies or it's unable to access the assets then the beneficiary can connect with it's wallet and request the assets to be transfer.
+1. This change the Trust state to RELEASE and it will check against the check in status.
+1. The Trust will emit an event to the Owner to notify about the Trust state change.
+1. If the Owner didn't check in within the time range the assets will be released to the beneficiary.
+1. If the Owner do a check in within the time range established then the Trust state will revert to HOLD and the request from the beneficiary will be invalid.
 
 #### Case 1: Single Beneficiary Trust:
 
