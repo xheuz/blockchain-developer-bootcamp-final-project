@@ -90,23 +90,61 @@ He can also provide an specific asset to belongs to an specific beneficiary when
 
 ```
 root
-|__ client                          //frontend part of the project
+|__ client                          //frontend of the project
+    |__ public                      //client entry point
+        |__ ...
+    |__ src                         //client source code
+        |__ ...
+    |__ ...
+    |__ package.json
 |__ contracts                       //solidity contracts
+    |__ ...
 |__ migrations                      //migrations for solidity contracts
+    |__ ...
 |__ scripts                         //bash scripts for install dependencies, deploy and running test
+    |__ ...
 |__ test                            //tests for solidity contracts
-|__ avoiding_common_attacks.md      //describes protection implemented for common attacks
-|__ deployed_address.txt            //ethereum contract addresses related to contract in testnet 
-|__ design_pattern_decisions.md     //describes which patterns were used
-|__ README.md                       //this file
+    |__ ...
+|__ requirements
+    |__ avoiding_common_attacks.md  //describes protection implemented for common attacks
+    |__ deployed_address.txt        //ethereum contract addresses related to contract in testnet 
+    |__ design_pattern_decisions.md //describes which patterns were used
+|__ .gitattributes
+|__ .gitignore
+|__ LICENSE
+|__ package.json                    //npm dependencies
+|__ README.md
 |__ truffle-config.js               //truffle auto-generated config file
 ```
 
-### Frontend
+## Installation
 
-<!-- and where the frontend project can be accessed -->
+### Environment
 
-<!-- And has your public Ethereum address if you'd like your certification as an NFT (optional)? YES/NO -->
+Check specific environment used [here](./environment.md)
+
+### Pre-requisites
+
+1. Install truffle and ganache-cli globally
+
+```bash
+npm install -g truffle@5.4.13
+npm install -g ganache-cli@6.12.2
+```
+
+#### Manual Setup
+
+```bash
+git clone git@github.com:xheuz/blockchain-developer-bootcamp-final-project.git
+cd blockchain-developer-bootcamp-final-project
+npm install
+```
+
+#### Docker Setup
+
+TBD
 
 
-<!-- Ethereum Address `0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30` -->
+## Ethereum Address
+
+`0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30`
