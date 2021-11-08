@@ -2,32 +2,31 @@
 
 _Create a Trust or Will that enable to transfer your digital assets to your love ones once you are gone._
 
-## Description
-### Introduction
+## DESCRIPTION
+### INTRODUCTION
 
 Traditionally we have a way to create a Trust or Will via an Executor for tangible and financial (fiat) assets but not for digital assets. The Executor is responsible for making sure that the wishes are carried out dutifully. Executors are commonly attorneys or trusted family members. There is a long process for beneficiaries to access or claim an inheritance: asset inventory, asset valuation, bill pay, tax and returns, distribution and only after going through all those long and painful steps the inheritance can finally be released. Also depending on where you live you can have different processes or rules to claim your inheritance.
 
 This project aims to provide a dapp that works as a Trustee. Basically allows anybody to protect their digital assets in a simple and homogeneous manner. Those digital assets then will only be accessible to beneficiaries added by the owner (testator) of the Trust or Will. In order to inherit those assets the owner should be already dead or he is unable to manage them for any reason. This is a way to secure that your assets will be distributed to those you really love. This is a very fast way for inheritance as well solves the issue of having to pay crazy amounts of money to third parties and trusting them to deliver everything as planned.
 
-### What is this project about?
+### WHAT IS THIS PROJECT ABOUT?
 
 A decentralized Trust or Will application that will work as a Trustee.
 
-### Why building this project?
+### WHY BUILDING THIS PROJECT?
 
 Currently we lack options to leave our digital assets to our loves ones. Decentralization enables a use case for creating a way to actually transfer ownership of your digital assets without third parties involved in the process and in a secure way.
 
-### How will this project work?
+### HOW WILL THIS PROJECT WORK?
 
 The project will have 3 roles:
 - The Testator: the person who creates and administrate the Trust or Will.
 - The Beneficiary: the person who receives the assets.
 - The Executor: the person who will work as arbitrage to release funds to beneficiaries. It will only be necessary when is a multi-beneficiary case and it does not receive any amount of assets.
 
-#### Case 1: Single Beneficiary Trust
-#### ========================
+#### CASE 1: SINGLE BENEFICIARY TRUST
 
-##### Workflow
+##### WORKFLOW
 
 1. First the Testator needs to connect with its wallet to create a Trust or Will by filling in all required information like time that should pass to release the assets.
 1. Then the Testator will be able to add a beneficiary.
@@ -40,7 +39,7 @@ The project will have 3 roles:
 1. If the Testator did a check in within the time range established then beneficiary request will be declined and the Trust state will stays as HOLD.
 
 
-##### As an Testator, I can:
+##### AS AN TESTATOR, I CAN:
 
 1. Connect with my wallet.
 1. Create a Trust or Will.
@@ -52,14 +51,16 @@ The project will have 3 roles:
 1. Receive a notification when assets are released.
 1. Destroy the Trust or Will and all assets should be transfer back to me.
 
-##### As a Beneficiary, I can:
+##### AS A BENEFICIARY, I CAN:
 
 1. Connect with my wallet.
 1. Send a notification about the health condition of the Testator.
 1. Receive a notification when assets are released.
 
-#### Case 2: Multi-Beneficiary Trust (TBD)
-#### ========================
+#### CASE 2: MULTI-BENEFICIARY TRUST
+
+TBD
+
 <!-- 
 ##### As an Testator, I can:
 
@@ -90,23 +91,66 @@ He can also provide an specific asset to belongs to an specific beneficiary when
 
 ```
 root
-|__ client                          //frontend part of the project
+|__ client                          //frontend of the project
+    |__ public                      //client entry point
+        |__ ...
+    |__ src                         //client source code
+        |__ ...
+    |__ ...
+    |__ package.json
 |__ contracts                       //solidity contracts
+    |__ ...
 |__ migrations                      //migrations for solidity contracts
+    |__ ...
 |__ scripts                         //bash scripts for install dependencies, deploy and running test
+    |__ ...
 |__ test                            //tests for solidity contracts
-|__ avoiding_common_attacks.md      //describes protection implemented for common attacks
-|__ deployed_address.txt            //ethereum contract addresses related to contract in testnet 
-|__ design_pattern_decisions.md     //describes which patterns were used
-|__ README.md                       //this file
+    |__ ...
+|__ requirements
+    |__ avoiding_common_attacks.md  //describes protection implemented for common attacks
+    |__ deployed_address.txt        //ethereum contract addresses related to contract in testnet 
+    |__ design_pattern_decisions.md //describes which patterns were used
+|__ .gitattributes
+|__ .gitignore
+|__ LICENSE
+|__ package.json                    //npm dependencies
+|__ README.md
 |__ truffle-config.js               //truffle auto-generated config file
 ```
 
-### Frontend
+## INSTALLATION
 
-<!-- and where the frontend project can be accessed -->
+### ENVIRONMENT
 
-<!-- And has your public Ethereum address if you'd like your certification as an NFT (optional)? YES/NO -->
+Check specific environment used [here](./environment.md)
+
+### PRE-REQUISITES
+
+1. Install truffle globally
+
+```bash
+npm install -g truffle@5.4.13
+```
+
+2. Install ganache-cli globally
+
+```bash
+npm install -g ganache-cli@6.12.2
+```
+
+#### MANUAL SETUP
+
+```bash
+git clone git@github.com:xheuz/blockchain-developer-bootcamp-final-project.git
+cd blockchain-developer-bootcamp-final-project
+npm install
+```
+
+#### DOCKER SETUP
+
+TBD
 
 
-<!-- Ethereum Address `0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30` -->
+## ETHEREUM ADDRESS
+
+`0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30`
