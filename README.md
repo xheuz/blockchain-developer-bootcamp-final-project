@@ -126,10 +126,15 @@ Check specific environment used [here](./environment.md)
 
 ### PRE-REQUISITES
 
-1. Install truffle and ganache-cli globally
+1. Install truffle globally
 
 ```bash
 npm install -g truffle@5.4.13
+```
+
+2. Install ganache-cli globally
+
+```bash
 npm install -g ganache-cli@6.12.2
 ```
 
