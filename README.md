@@ -31,7 +31,7 @@ The project will have 3 roles:
 1. First the Testator needs to connect with its wallet to create a Trust or Will by filling in all required information like time that should pass to release the assets.
 1. Then the Testator will be able to add a beneficiary.
 1. After that the Testator needs to add the assets (ERC-20 or ERC-721 tokens only).
-1. The Testator needs to keep doing a checking within the amount of time selected at the time of creating the Trust or Will.
+1. The Testator needs to keep doing a check-in within the amount of time selected at the time of creating the Trust or Will.
 1. If the Testator dies or it's unable to access the assets then the beneficiary can connect with it's wallet and request the assets to be transfer.
 1. This change the Trust state to RELEASE and it will check against the check in status.
 1. The Trust will emit an event to the Testator to notify about the Trust state change.
@@ -47,14 +47,15 @@ The project will have 3 roles:
 1. Add a beneficiary.
 1. Configure a release period of time.
 1. Keep adding assets to the Trust or Will.
-1. Invalidate a false health condition notification.
+1. Send an alive signal before time expires.
 1. Receive a notification when assets are released.
 1. Destroy the Trust or Will and all assets should be transfer back to me.
 
 ##### AS A BENEFICIARY, I CAN:
 
 1. Connect with my wallet.
-1. Send a notification about the health condition of the Testator.
+1. View all Trusts that I can request funds from.
+1. Request funds when available.
 1. Receive a notification when assets are released.
 
 #### CASE 2: MULTI-BENEFICIARY TRUST
@@ -151,6 +152,10 @@ npm install
 TBD
 
 
-## ETHEREUM ADDRESS
+## MISCELANEOUS
 
-`0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30`
+### ETHEREUM ACCOUNT
+
+```javascript
+0x13Fd35D781550DEf2ffB86A7E1DA4cc6782dee30
+```
