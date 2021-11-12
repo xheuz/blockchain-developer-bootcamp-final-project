@@ -26,21 +26,18 @@ contract Trustee is Ownable {
     event DepositedNFT(address indexed testator, address nft);
     event TrustClaimed(address indexed testator, address indexed trustAddress);
 
-    Beneficiary[] public beneficiaries;
     uint public constant defaultCheckInFrecuencyInDays = 30 days;
     uint public testatorsCount = 0;
+    uint public beneficiariesCount = 0;
+
     mapping(address => Testator) private testators;
     mapping(address => address[]) private beneficiaryToTrusts;
 
     struct Testator {
         uint lastCheckIn;
         uint checkInFrecuencyInDays;
-        uint[] beneficiariesIndex;
-    }
-
-    struct Beneficiary {
-        address payable account;
-        address trust;
+        address[] beneficiaries;
+        mapping(address => address) beneficiaryToTrust;
     }
 
     /** Function Modifiers
@@ -49,7 +46,7 @@ contract Trustee is Ownable {
     modifier isTestator() {
         Testator storage testator = testators[msg.sender];
         require(
-            testator.beneficiariesIndex.length > 0,
+            testator.beneficiaries.length > 0,
             "You need to add a beneficiary first."
         );
         _;
@@ -76,7 +73,7 @@ contract Trustee is Ownable {
     }
 
     modifier hasCheckInExpired() {
-        Testator memory testator = testators[msg.sender];
+        Testator storage testator = testators[msg.sender];
         uint _lastCheckIn = testator.lastCheckIn;
         uint _checkInFrecuencyInDays = testator.checkInFrecuencyInDays;
         uint timeSinceLastCheckIn = _checkInFrecuencyInDays > 0
@@ -96,10 +93,34 @@ contract Trustee is Ownable {
     }
 
     /**
-     * @notice Removes beneficiary from beneficiaries array
-     * @dev Removes indexes from Testator and also from beneficiaries
+     * @notice Removes an element from array.
+     * @dev Removes element from array but does not preserve order. This is very
+     * @dev fast and cost efficient.
      */
-    function _removeBeneficiary(uint _index) internal {}
+    function _removeElementByIndex(address[] storage _array, uint _index)
+        internal
+    {
+        _array[_index] = _array[_array.length - 1];
+        _array.pop();
+    }
+
+    /**
+     * @notice Returns index of an element from array.
+     * @dev Returns index of an element from array.
+     * @return index of the element.
+     */
+    function _getElementIndex(address[] memory _array, address _element)
+        internal
+        pure
+        returns (uint index)
+    {
+        for (uint i = 0; i < _array.length; i++) {
+            if (_array[i] == _element) {
+                index = i;
+                break;
+            }
+        }
+    }
 
     /**
      * @dev Sets lastCheckIn property for Testator.
@@ -135,11 +156,19 @@ contract Trustee is Ownable {
         trustAddress = payable(address(new Trust(_beneficiary)));
     }
 
+    function _getAmountOfBeneficiaries()
+        internal
+        view
+        returns (uint numOfBeneficiaries)
+    {
+        numOfBeneficiaries = testators[msg.sender].beneficiaries.length;
+    }
+
     /** Testator Functions
      */
 
     /**
-     * @notice Adds a beneficiary with it's Trust
+     * @notice Adds a beneficiary with it's Trust if it doesn't have one
      * @dev Turns the caller into a Testator by creating a Trust and relating
      * @dev the beneficiary with the Trust. Also asociates the Beneficiary with
      * @dev it's Testator. Updates lastCheckIn and initialize checkInFrecuencyInDays
@@ -147,27 +176,25 @@ contract Trustee is Ownable {
      * @param _beneficiary is the address that will received the trust assets.
      */
     function addBeneficiary(address _beneficiary) public payable {
+        // TODO: needs to add a check to confirm beneficiary doesn't have
+        // a trust associated to it. A helper function that checks if _contains()
+        // this is important because a trust can be lost forever if a new one is set
+        // pointing to the same beneficiary.
+
         // 1. Create the Trust (call helper function)
         address payable trustAddress = _createTrust(payable(_beneficiary));
-        // 2. Create Beneficiary
-        Beneficiary memory beneficiary = Beneficiary(
-            payable(_beneficiary),
-            trustAddress
-        );
-        // 3. Add Beneficiary to beneficiaries and beneficiaryToTrusts
-        beneficiaries.push(beneficiary);
-        uint beneficiaryIndex = beneficiaries.length - 1;
-        beneficiaryToTrusts[_beneficiary].push(trustAddress);
-        // 4. Increment testatorsCount if new testator
-        if (testators[msg.sender].beneficiariesIndex.length == 0) {
-            testatorsCount++;
-        }
-        // 5. Add index to Testator.beneficiariesIndex
-        testators[msg.sender].beneficiariesIndex.push(beneficiaryIndex);
+        // 2. Increment testatorsCount if new testator
+        if (testators[msg.sender].beneficiaries.length == 0) testatorsCount++;
+        // 3. Add beneficiary to testator
+        testators[msg.sender].beneficiaries.push(_beneficiary);
+        testators[msg.sender].beneficiaryToTrust[_beneficiary] = trustAddress;
         _setDefaultCheckInFrecuencyInDays();
         _setLastCheckIn();
+        // 4. Add beneficiary to beneficiaryToTrusts
+        beneficiaryToTrusts[_beneficiary].push(trustAddress);
+        beneficiariesCount++;
 
-        // 6. Log the event of adding a new beneficiary
+        // 5. Log the event of adding a new beneficiary
         emit BeneficiaryAdded(msg.sender, _beneficiary, trustAddress);
     }
 
@@ -177,11 +204,31 @@ contract Trustee is Ownable {
      * @dev Testator.
      * @param _beneficiary is the address that will be removed.
      */
-    function removeBeneficiary(address _beneficiary)
-        public
-        payable
-        isTestator
-    {}
+    function removeBeneficiary(address _beneficiary) public payable isTestator {
+        Testator storage testator = testators[msg.sender];
+        // 1. Destroy trust
+        address trustAddress = testator.beneficiaryToTrust[_beneficiary];
+        Trust trust = Trust(trustAddress);
+        trust.destroy();
+        // 2. Remove beneficiary from testator
+        uint index = _getElementIndex(testator.beneficiaries, _beneficiary);
+        _removeElementByIndex(testator.beneficiaries, index);
+        delete testator.beneficiaryToTrust[_beneficiary];
+        // 3. Remove beneficiary from beneficiaryToTrusts
+        index = _getElementIndex(
+            beneficiaryToTrusts[_beneficiary],
+            trustAddress
+        );
+        _removeElementByIndex(beneficiaryToTrusts[_beneficiary], index);
+        if (beneficiaryToTrusts[_beneficiary].length == 0)
+            delete beneficiaryToTrusts[_beneficiary];
+        // 4. Decrement testatorsCount if no testator
+        if (testators[msg.sender].beneficiaries.length == 0) testatorsCount--;
+        beneficiariesCount--;
+
+        // 5. Log the event of removing a beneficiary
+        emit BeneficiaryRemoved(msg.sender, _beneficiary, trustAddress);
+    }
 
     /**
      * @notice Replaces a beneficiary with another one.
@@ -194,7 +241,32 @@ contract Trustee is Ownable {
         public
         payable
         isTestator
-    {}
+    {
+        // TODO: prevent the change if the newBeneficiary already have a trust
+        // from the same testator
+
+        Testator storage testator = testators[msg.sender];
+        // 1. Update testator
+        address trustAddress = testator.beneficiaryToTrust[_oldBeneficiary];
+        uint index = _getElementIndex(
+            testator.beneficiaries,
+            _oldBeneficiary
+        );
+        testator.beneficiaries[index] = _newBeneficiary;
+        testator.beneficiaryToTrust[_newBeneficiary] = trustAddress;
+        delete testator.beneficiaryToTrust[_oldBeneficiary];
+        // 2. Update beneficiaryToTrusts
+        beneficiaryToTrusts[_newBeneficiary].push(trustAddress);
+        index = _getElementIndex(
+            beneficiaryToTrusts[_oldBeneficiary],
+            trustAddress
+        );
+        _removeElementByIndex(beneficiaryToTrusts[_oldBeneficiary], index);
+        if (beneficiaryToTrusts[_oldBeneficiary].length == 0)
+            delete beneficiaryToTrusts[_oldBeneficiary];
+
+        emit BeneficiaryChanged(msg.sender, _oldBeneficiary, _newBeneficiary);
+    }
 
     /**
      * @notice List all beneficiaries indexes for Testator
@@ -206,19 +278,9 @@ contract Trustee is Ownable {
         external
         view
         isTestator
-        returns (Beneficiary[] memory)
+        returns (address[] memory)
     {
-        uint numOfBeneficiaries = testators[msg.sender]
-            .beneficiariesIndex
-            .length;
-
-        Beneficiary[] memory beneficiariesInstances = new Beneficiary[](numOfBeneficiaries);
-        for (uint i = 0; i < numOfBeneficiaries; i++) {
-            beneficiariesInstances[i] = beneficiaries[
-                testators[msg.sender].beneficiariesIndex[i]
-            ];
-        }
-        return beneficiariesInstances;
+        return testators[msg.sender].beneficiaries;
     }
 
     /**

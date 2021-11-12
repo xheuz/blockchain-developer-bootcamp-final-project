@@ -10,4 +10,6 @@ contract Trust is Ownable, Pausable {
     constructor(address payable _beneficiary) {
       beneficiary = _beneficiary;
     }
+
+    function destroy() external onlyOwner {}
 }
