@@ -5,20 +5,26 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Trust.sol";
 
 contract Trustee is Ownable {
-    event BeneficiaryAdded(address indexed testator, address indexed beneficiary);
-    event BeneficiaryRemoved(address indexed testator, address indexed beneficiary);
-    event BeneficiaryChanged(address indexed testator, address indexed beneficiary);
-    event CheckInUpdated(address testator, uint time);
-    event CheckInFrecuencyUpdated(address testator, uint time);
-    event Deposited(address indexed testator, uint amount);
-    event DepositedNFT(address indexed testator, address nft);
-    event TrustDestroyed(address indexed testator, address indexed trustAddress);
-    event TrustClaimed(address indexed testator, address indexed trustAddress);
-    event TrustCreated(
+    event BeneficiaryAdded(
         address indexed testator,
         address indexed beneficiary,
         address indexed trustAddress
     );
+    event BeneficiaryRemoved(
+        address indexed testator,
+        address indexed beneficiary,
+        address indexed trustAddress
+    );
+    event BeneficiaryChanged(
+        address indexed testator,
+        address oldBeneficiary,
+        address newBeneficiary
+    );
+    event LastCheckInUpdated(address testator, uint time);
+    event CheckInFrecuencyUpdated(address testator, uint time);
+    event Deposited(address indexed testator, uint amount);
+    event DepositedNFT(address indexed testator, address nft);
+    event TrustClaimed(address indexed testator, address indexed trustAddress);
 
     Beneficiary[] public beneficiaries;
     uint public constant defaultCheckInFrecuencyInDays = 30 days;
@@ -27,7 +33,6 @@ contract Trustee is Ownable {
     mapping(address => address[]) private beneficiaryToTrusts;
 
     struct Testator {
-        address payable account;
         uint lastCheckIn;
         uint checkInFrecuencyInDays;
         uint[] beneficiariesIndex;
@@ -37,6 +42,9 @@ contract Trustee is Ownable {
         address payable account;
         address trust;
     }
+
+    /** Function Modifiers
+     */
 
     modifier isTestator() {
         Testator storage testator = testators[msg.sender];
@@ -74,7 +82,6 @@ contract Trustee is Ownable {
         uint timeSinceLastCheckIn = _checkInFrecuencyInDays > 0
             ? _checkInFrecuencyInDays
             : defaultCheckInFrecuencyInDays;
-
         timeSinceLastCheckIn += _lastCheckIn;
         require(block.timestamp > timeSinceLastCheckIn, "Time hasn't expired.");
         _;
@@ -101,7 +108,7 @@ contract Trustee is Ownable {
         uint _now = block.timestamp;
         testators[msg.sender].lastCheckIn = _now;
 
-        emit CheckInUpdated(msg.sender, _now);
+        emit LastCheckInUpdated(msg.sender, _now);
     }
 
     /**
@@ -126,7 +133,6 @@ contract Trustee is Ownable {
         returns (address payable trustAddress)
     {
         trustAddress = payable(address(new Trust(_beneficiary)));
-        emit TrustCreated(msg.sender, _beneficiary, trustAddress);
     }
 
     /** Testator Functions
@@ -142,9 +148,27 @@ contract Trustee is Ownable {
      */
     function addBeneficiary(address _beneficiary) public payable {
         // 1. Create the Trust (call helper function)
+        address payable trustAddress = _createTrust(payable(_beneficiary));
         // 2. Create Beneficiary
-        // 3. Add Beneficiary to beneficiaries
-        // 4. Add index to Testator.beneficiariesIndex
+        Beneficiary memory beneficiary = Beneficiary(
+            payable(_beneficiary),
+            trustAddress
+        );
+        // 3. Add Beneficiary to beneficiaries and beneficiaryToTrusts
+        beneficiaries.push(beneficiary);
+        uint beneficiaryIndex = beneficiaries.length - 1;
+        beneficiaryToTrusts[_beneficiary].push(trustAddress);
+        // 4. Increment testatorsCount if new testator
+        if (testators[msg.sender].beneficiariesIndex.length == 0) {
+            testatorsCount++;
+        }
+        // 5. Add index to Testator.beneficiariesIndex
+        testators[msg.sender].beneficiariesIndex.push(beneficiaryIndex);
+        _setDefaultCheckInFrecuencyInDays();
+        _setLastCheckIn();
+
+        // 6. Log the event of adding a new beneficiary
+        emit BeneficiaryAdded(msg.sender, _beneficiary, trustAddress);
     }
 
     /**
@@ -176,16 +200,25 @@ contract Trustee is Ownable {
      * @notice List all beneficiaries indexes for Testator
      * @dev This will reveal all indexes for Testator, but not the actual trust
      * @dev addresses. That will require accessing beneficiaryToTrusts on client.
-     * @return indexes for beneficiaries array.
+     * @return beneficiariesInstances for beneficiaries array.
      */
     function getBeneficiaries()
         external
         view
         isTestator
-        returns (uint[] memory indexes)
+        returns (Beneficiary[] memory)
     {
-        Testator memory testator = testators[msg.sender];
-        return testator.beneficiariesIndex;
+        uint numOfBeneficiaries = testators[msg.sender]
+            .beneficiariesIndex
+            .length;
+
+        Beneficiary[] memory beneficiariesInstances = new Beneficiary[](numOfBeneficiaries);
+        for (uint i = 0; i < numOfBeneficiaries; i++) {
+            beneficiariesInstances[i] = beneficiaries[
+                testators[msg.sender].beneficiariesIndex[i]
+            ];
+        }
+        return beneficiariesInstances;
     }
 
     /**
@@ -258,7 +291,7 @@ contract Trustee is Ownable {
      * @notice is the beneficiary.
      * @dev This function is the reason why beneficiaryToTrusts storage exist.
      */
-    function getBeneficiaryTrusts()
+    function getTrusts()
         external
         view
         isBeneficiary
