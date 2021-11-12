@@ -21,12 +21,12 @@ contract Trustee is Ownable {
         address newBeneficiary
     );
     event LastCheckInUpdated(address testator, uint time);
-    event CheckInFrecuencyUpdated(address testator, uint time);
+    event CheckInFrequencyUpdated(address testator, uint time);
     event Deposited(address indexed testator, uint amount);
     event DepositedNFT(address indexed testator, address nft);
     event TrustClaimed(address indexed testator, address indexed trustAddress);
 
-    uint public constant defaultCheckInFrecuencyInDays = 30 days;
+    uint public constant defaultCheckInFrequencyInDays = 30 days;
     uint public testatorsCount = 0;
     uint public beneficiariesCount = 0;
 
@@ -35,7 +35,7 @@ contract Trustee is Ownable {
 
     struct Testator {
         uint lastCheckIn;
-        uint checkInFrecuencyInDays;
+        uint checkInFrequencyInDays;
         address[] beneficiaries;
         mapping(address => address) beneficiaryToTrust;
     }
@@ -44,9 +44,8 @@ contract Trustee is Ownable {
      */
 
     modifier isTestator() {
-        Testator storage testator = testators[msg.sender];
         require(
-            testator.beneficiaries.length > 0,
+            testators[msg.sender].beneficiaries.length > 0,
             "You need to add a beneficiary first."
         );
         _;
@@ -75,10 +74,10 @@ contract Trustee is Ownable {
     modifier hasCheckInExpired() {
         Testator storage testator = testators[msg.sender];
         uint _lastCheckIn = testator.lastCheckIn;
-        uint _checkInFrecuencyInDays = testator.checkInFrecuencyInDays;
-        uint timeSinceLastCheckIn = _checkInFrecuencyInDays > 0
-            ? _checkInFrecuencyInDays
-            : defaultCheckInFrecuencyInDays;
+        uint _checkInFrequencyInDays = testator.checkInFrequencyInDays;
+        uint timeSinceLastCheckIn = _checkInFrequencyInDays > 0
+            ? _checkInFrequencyInDays
+            : defaultCheckInFrequencyInDays;
         timeSinceLastCheckIn += _lastCheckIn;
         require(block.timestamp > timeSinceLastCheckIn, "Time hasn't expired.");
         _;
@@ -90,6 +89,11 @@ contract Trustee is Ownable {
     function _daysToSeconds(uint _days) internal pure returns (uint) {
         // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
         return _days * (24 * 60 * 60);
+    }
+
+    function _secondsToDays(uint _seconds) internal pure returns (uint) {
+        // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
+        return _seconds / (24 * 60 * 60);
     }
 
     /**
@@ -133,15 +137,17 @@ contract Trustee is Ownable {
     }
 
     /**
-     * @dev Sets default check-in frecuency for Testator.
+     * @dev Sets default check-in frequency for Testator.
+     * @param _days amount of days required before trust become claimable
      */
-    function _setDefaultCheckInFrecuencyInDays() internal {
-        if (testators[msg.sender].checkInFrecuencyInDays == 0) {
-            testators[msg.sender]
-                .checkInFrecuencyInDays = defaultCheckInFrecuencyInDays;
-        }
+    function _setCheckInFrequencyInDays(uint _days) internal {
+        uint newFrequency = _days == 0
+            ? defaultCheckInFrequencyInDays
+            : _daysToSeconds(_days);
 
-        emit CheckInFrecuencyUpdated(msg.sender, defaultCheckInFrecuencyInDays);
+        testators[msg.sender].checkInFrequencyInDays = newFrequency;
+
+        emit CheckInFrequencyUpdated(msg.sender, newFrequency);
     }
 
     /**
@@ -156,14 +162,6 @@ contract Trustee is Ownable {
         trustAddress = payable(address(new Trust(_beneficiary)));
     }
 
-    function _getAmountOfBeneficiaries()
-        internal
-        view
-        returns (uint numOfBeneficiaries)
-    {
-        numOfBeneficiaries = testators[msg.sender].beneficiaries.length;
-    }
-
     /** Testator Functions
      */
 
@@ -171,7 +169,7 @@ contract Trustee is Ownable {
      * @notice Adds a beneficiary with it's Trust if it doesn't have one
      * @dev Turns the caller into a Testator by creating a Trust and relating
      * @dev the beneficiary with the Trust. Also asociates the Beneficiary with
-     * @dev it's Testator. Updates lastCheckIn and initialize checkInFrecuencyInDays
+     * @dev it's Testator. Updates lastCheckIn and initialize checkInFrequencyInDays
      * @dev property of the Testator if nothing is configured.
      * @param _beneficiary is the address that will received the trust assets.
      */
@@ -188,7 +186,8 @@ contract Trustee is Ownable {
         // 3. Add beneficiary to testator
         testators[msg.sender].beneficiaries.push(_beneficiary);
         testators[msg.sender].beneficiaryToTrust[_beneficiary] = trustAddress;
-        _setDefaultCheckInFrecuencyInDays();
+        if (testators[msg.sender].checkInFrequencyInDays == 0) 
+            _setCheckInFrequencyInDays(0);
         _setLastCheckIn();
         // 4. Add beneficiary to beneficiaryToTrusts
         beneficiaryToTrusts[_beneficiary].push(trustAddress);
@@ -284,6 +283,14 @@ contract Trustee is Ownable {
     }
 
     /**
+     * @notice Retrieves last time testator checked-in.
+     * @return lastCheckIn of the Testator.
+     */
+    function getLastCheckIn() external view isTestator returns (uint) {
+        return testators[msg.sender].lastCheckIn;
+    }
+
+    /**
      * @notice Register a check-in to keep assets locked for beneficiaries.
      * @notice Failing to check-in enables all beneficiaries to claim assets.
      * @dev This is a stand alone function just to affect the check-in property
@@ -295,19 +302,24 @@ contract Trustee is Ownable {
     }
 
     /**
+     * @notice Retrieves how often a check-in must be done in days.
+     * @dev Seconds needs to be converted to days.
+     */
+    function getCheckInFrequencyInDays() external view isTestator returns (uint) {
+        return _secondsToDays(testators[msg.sender].checkInFrequencyInDays);
+    }
+
+    /**
      * @notice Amount of days to do a check-in. Failing to check-in enables
      * @notice beneficiaries to claim the assets. A minimum of 30 days is
      * @notice required which is also the default amount if not configured.
      * @dev Days needs to be converted to seconds in order to do calculations.
      * @param _days amount of days required to do a check-in.
      */
-    function setCheckInFrecuencyInDays(uint _days) external isTestator {
+    function setCheckInFrequencyInDays(uint _days) external isTestator {
         require(_days >= 30, "At least 30 days are require between check-ins.");
-        uint daysToSeconds = _daysToSeconds(_days);
-        testators[msg.sender].checkInFrecuencyInDays = daysToSeconds;
         _setLastCheckIn();
-
-        emit CheckInFrecuencyUpdated(msg.sender, daysToSeconds);
+        _setCheckInFrequencyInDays(_days);
     }
 
     /**
@@ -352,13 +364,16 @@ contract Trustee is Ownable {
      * @notice List all trusts that are related to the caller where caller
      * @notice is the beneficiary.
      * @dev This function is the reason why beneficiaryToTrusts storage exist.
+     * @return trusts related to beneficiary.
      */
     function getTrusts()
         external
         view
         isBeneficiary
         returns (address[] memory trusts)
-    {}
+    {
+        return beneficiaryToTrusts[msg.sender];
+    }
 
     /**
      * @notice List all trusts that are related to the caller where caller
