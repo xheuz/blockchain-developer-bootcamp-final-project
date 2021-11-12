@@ -180,16 +180,47 @@ contract("Trustee", function (accounts) {
       await instance.addBeneficiary(beneficiaryAccount, {
         from: testatorAccount,
       });
-      const events = await instance.setLastCheckIn({ from: testatorAccount });
 
-      const newTime = events.logs[0].args.time;
+      const result = await instance.setLastCheckIn({ from: testatorAccount });
+      const lastCheckIn = await instance.getLastCheckIn({
+        from: testatorAccount,
+      });
 
-      assert.isTrue(newTime, "no time found");
+      assert.equal(
+        result.logs[0].args.time.toNumber(),
+        lastCheckIn.toNumber(),
+        "last check-in does not match"
+      );
+    });
+
+    it("should allow to update check-in frequency", async () => {
+      await instance.addBeneficiary(beneficiaryAccount, {
+        from: testatorAccount,
+      });
+
+      const originalFrequency = await instance.getCheckInFrequencyInDays({
+        from: testatorAccount,
+      });
+      await instance.setCheckInFrequencyInDays(60, { from: testatorAccount });
+      const lastFrequency = await instance.getCheckInFrequencyInDays({
+        from: testatorAccount,
+      });
+
+      assert.equal(originalFrequency, 30, "original frequency does not match")
+      assert.equal(lastFrequency, 60, "lsat frequency does not match");
+      assert.isTrue(
+        lastFrequency > originalFrequency,
+        "frequency did not update"
+      );
     });
   });
 
   describe("As Beneficiary", () => {
-    it("should allow to list trusts", async () => {
+    it("should allow to list trusts of addresses", async () => {
+      await instance.addBeneficiary(beneficiaryAccount, {
+        from: testatorAccount,
+      });
+
       // retrieve the list of addresses representing all trusts
       // related to the caller
       const trustsAddresses = await instance.getTrusts({
@@ -197,7 +228,7 @@ contract("Trustee", function (accounts) {
       });
 
       // since nothing is been added it should be 0
-      assert.equal(trustsAddresses.length, 0);
+      assert.equal(trustsAddresses.length, 1);
     });
   });
 });
