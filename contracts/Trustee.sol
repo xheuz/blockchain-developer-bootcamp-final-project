@@ -2,19 +2,23 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Trust.sol";
 
-contract Trustee is Ownable {
+contract Trustee is Ownable, ReentrancyGuard {
+    // logs every time a beneficiary is added
     event BeneficiaryAdded(
         address indexed testator,
         address indexed beneficiary,
         address indexed trustAddress
     );
+    // logs every time a beneficiary is removed
     event BeneficiaryRemoved(
         address indexed testator,
         address indexed beneficiary,
         address indexed trustAddress
     );
+    // logs every time a beneficiary is replaced by another one
     event BeneficiaryChanged(
         address indexed testator,
         address oldBeneficiary,
@@ -22,21 +26,31 @@ contract Trustee is Ownable {
     );
     event LastCheckInUpdated(address testator, uint time);
     event CheckInFrequencyUpdated(address testator, uint time);
-    event Deposited(address indexed testator, uint amount);
-    event DepositedNFT(address indexed testator, address nft);
+    event Deposited(address indexed testator, uint value, address nft);
     event TrustClaimed(address indexed testator, address indexed trustAddress);
 
-    uint public constant defaultCheckInFrequencyInDays = 30 days;
+    uint public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
     uint public testatorsCount = 0;
     uint public beneficiariesCount = 0;
 
+    // testators addresses are mapped to the dataType that must be unique
     mapping(address => Testator) private testators;
+    // beneficiaries can have to multiple trusts from different testators
     mapping(address => address[]) private beneficiaryToTrusts;
+    mapping(address => address) private trustToTestator;
 
+    // data structure that defines all information related to a testator
     struct Testator {
+        // last time a check-in as registered
         uint lastCheckIn;
+        // how often a check-in is needed
         uint checkInFrequencyInDays;
+        // all beneficiaries related to testator
         address[] beneficiaries;
+        // keeps track of beneficiary position in the array
+        // beneficiary must be unique per testator
+        mapping(address => uint) _indexes;
+        // one to one relationship between beneficiary and trust address
         mapping(address => address) beneficiaryToTrust;
     }
 
@@ -68,18 +82,6 @@ contract Trustee is Ownable {
             }
         }
         require(found == true, "Impossible to claim.");
-        _;
-    }
-
-    modifier hasCheckInExpired() {
-        Testator storage testator = testators[msg.sender];
-        uint _lastCheckIn = testator.lastCheckIn;
-        uint _checkInFrequencyInDays = testator.checkInFrequencyInDays;
-        uint timeSinceLastCheckIn = _checkInFrequencyInDays > 0
-            ? _checkInFrequencyInDays
-            : defaultCheckInFrequencyInDays;
-        timeSinceLastCheckIn += _lastCheckIn;
-        require(block.timestamp > timeSinceLastCheckIn, "Time hasn't expired.");
         _;
     }
 
@@ -142,7 +144,7 @@ contract Trustee is Ownable {
      */
     function _setCheckInFrequencyInDays(uint _days) internal {
         uint newFrequency = _days == 0
-            ? defaultCheckInFrequencyInDays
+            ? DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS
             : _daysToSeconds(_days);
 
         testators[msg.sender].checkInFrequencyInDays = newFrequency;
@@ -152,14 +154,13 @@ contract Trustee is Ownable {
 
     /**
      * @dev Creates a Trust that will received all beneficiary assets.
-     * @param _beneficiary instance of Beneficiary
      * @return trustAddress which is the new Trust
      */
-    function _createTrust(address payable _beneficiary)
+    function _createTrust()
         internal
         returns (address payable trustAddress)
     {
-        trustAddress = payable(address(new Trust(_beneficiary)));
+        trustAddress = payable(address(new Trust(address(this))));
     }
 
     /** Testator Functions
@@ -180,13 +181,13 @@ contract Trustee is Ownable {
         // pointing to the same beneficiary.
 
         // 1. Create the Trust (call helper function)
-        address payable trustAddress = _createTrust(payable(_beneficiary));
+        address payable trustAddress = _createTrust();
         // 2. Increment testatorsCount if new testator
         if (testators[msg.sender].beneficiaries.length == 0) testatorsCount++;
         // 3. Add beneficiary to testator
         testators[msg.sender].beneficiaries.push(_beneficiary);
         testators[msg.sender].beneficiaryToTrust[_beneficiary] = trustAddress;
-        if (testators[msg.sender].checkInFrequencyInDays == 0) 
+        if (testators[msg.sender].checkInFrequencyInDays == 0)
             _setCheckInFrequencyInDays(0);
         _setLastCheckIn();
         // 4. Add beneficiary to beneficiaryToTrusts
@@ -206,7 +207,9 @@ contract Trustee is Ownable {
     function removeBeneficiary(address _beneficiary) public payable isTestator {
         Testator storage testator = testators[msg.sender];
         // 1. Destroy trust
-        address trustAddress = testator.beneficiaryToTrust[_beneficiary];
+        address payable trustAddress = payable(
+            testator.beneficiaryToTrust[_beneficiary]
+        );
         Trust trust = Trust(trustAddress);
         trust.destroy();
         // 2. Remove beneficiary from testator
@@ -283,6 +286,20 @@ contract Trustee is Ownable {
     }
 
     /**
+     * @notice Retrieve trust related to beneficiary for Testator
+     * @dev It will access the mapping that's inside the testator.
+     * @return trustAddress for beneficiary.
+     */
+    function getBeneficiaryTrust(address _beneficiary)
+        external
+        view
+        isTestator
+        returns (address trustAddress)
+    {
+        return testators[msg.sender].beneficiaryToTrust[_beneficiary];
+    }
+
+    /**
      * @notice Retrieves last time testator checked-in.
      * @return lastCheckIn of the Testator.
      */
@@ -305,7 +322,12 @@ contract Trustee is Ownable {
      * @notice Retrieves how often a check-in must be done in days.
      * @dev Seconds needs to be converted to days.
      */
-    function getCheckInFrequencyInDays() external view isTestator returns (uint) {
+    function getCheckInFrequencyInDays()
+        external
+        view
+        isTestator
+        returns (uint)
+    {
         return _secondsToDays(testators[msg.sender].checkInFrequencyInDays);
     }
 
@@ -325,36 +347,35 @@ contract Trustee is Ownable {
     /**
      * @notice Send assets to beneficiary trust.
      * @dev Transfer value to Trust contract directly, never to beneficiary.
+     * @dev The trust will act as a custodian for the assets.
      * @param _beneficiary is the address that will received the trust assets.
-     * @param _amount how much will be transfered.
      */
-    function deposit(address _beneficiary, uint _amount)
+    function deposit(address _beneficiary)
         external
+        payable
         isTestator
-    {}
+        nonReentrant
+    {
+        address payable _trust = payable(
+            testators[msg.sender].beneficiaryToTrust[_beneficiary]
+        );
+        (bool sent, ) = _trust.call{value: msg.value}("");
+        require(sent, "Failed to send Ether");
+
+        emit Deposited(msg.sender, msg.value, address(0));
+    }
 
     /**
      * @notice Send NFT assets to beneficiary trust.
      * @dev Transfer value to Trust contract directly, never to beneficiary.
+     * @dev Then beneficiary can claim once check-in time has expired.
      * @param _beneficiary is the address that will received the trust assets.
      * @param _nft token that will be transfered.
      */
-    function depositNFT(address _beneficiary, address _nft)
+    function depositNFT(address _beneficiary, uint _nft)
         external
+        payable
         isTestator
-    {}
-
-    /**
-     * @notice Retrieves balance and NFT's from beneficiary trust.
-     * @dev Transfer value to Trust contract directly, never to beneficiary.
-     * @param _beneficiary is the address that will received the trust assets.
-     * @return balance and nfts currently on beneficiary Trust.
-     */
-    function getBeneficiaryAssets(address _beneficiary)
-        external
-        view
-        isTestator
-        returns (uint balance, address[] memory ntfs)
     {}
 
     /** Beneficiary Functions
@@ -380,9 +401,12 @@ contract Trustee is Ownable {
      * @notice is the beneficiary.
      * @dev This function is the reason why beneficiaryToTrusts storage exist.
      */
-    function claimTrust(address _trust)
+    function claim(address _trust)
         external
-        isBeneficiary
         isBeneficiaryOf(_trust)
-    {}
+    {
+        // require(block.timestamp >= testator.lastCheckIn + testator.checkInFrequencyInDays, "Can not claim trust");
+        Trust trust = Trust(payable(_trust));
+        trust.release(payable(msg.sender));
+    }
 }

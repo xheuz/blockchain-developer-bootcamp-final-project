@@ -9,15 +9,37 @@ contract("Trust", function (accounts) {
   const [_, testatorAccount, beneficiaryAccount] = accounts;
 
   beforeEach(async () => {
-    instance = await Trust.new({from: testatorAccount});
+    instance = await Trust.new(beneficiaryAccount, {from: testatorAccount});
   });
 
-  it("should assert true", async function () {
-    await Trust.deployed();
-    return assert.isTrue(true);
+  it("is owned by testator", async () => {
+    assert.equal(
+      await instance.owner.call(),
+      testatorAccount,
+      "owner is not correct"
+    );
   });
 
-  it("should be able to be created", async function () {
-    console.log(await web3.eth.getBalance(beneficiaryAccount))
+  it("can receive payments from testator", async () => {
+    assert.isTrue(false);
+  });
+
+  it("can not be release by testator", async () => {
+    assert.isTrue(false);
+  });
+
+  it("can not be release by beneficiary", async () => {
+    assert.isTrue(false);
+  });
+
+  it("can be released by trustee", async () => {
+    assert.isTrue(false);
+  });
+
+  it("can be destroyed by testator", async () => {
+    await instance.destroy({ from : testatorAccount });
+    const balance = await web3.eth.getBalance(instance.address);
+    assert.equal(balance, 0, "balance does not match");
+
   });
 });
