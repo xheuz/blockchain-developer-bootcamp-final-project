@@ -3,9 +3,17 @@ import TrusteeContract from "./contracts/Trustee.json";
 import getWeb3 from "./utils/getWeb3";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import TopBar from "./components/TopBar";
+import BottomBar from "./components/BottomBar";
 import routes from "./routes";
 
+if (process.env.NODE_ENV !== 'production') {
+  console.log(process.env.REACT_APP_ETHERSCAN_URL);
+}
+
 function App() {
+  const [state, setState] = useState({
+    accounts: null,
+  });
   // const [state, setState] = useState({
   //   storageValue: 0,
   //   web3: null,
@@ -59,7 +67,7 @@ function App() {
   //   return <div>Loading Web3, accounts, and contract...</div>;
   return (
     <Router>
-      <TopBar />
+      <TopBar {...state} />
       <main>
         <Routes>
           {routes.map(({ path, element: C }, index) => (
@@ -67,6 +75,7 @@ function App() {
           ))}
         </Routes>
       </main>
+      <BottomBar {...state} />
     </Router>
   );
 }

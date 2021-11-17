@@ -62,7 +62,7 @@ export default function InfoSection() {
   return (
     <Section
       title="Become a Testator"
-      subtitle={`A testator is a wise person who keeps loving event when it's gone.`}
+      subtitle={`A testator is a wise person who keeps loving even when it's gone.`}
       sx={{ padding: 2, flexGrow: 1, backgroundColor: "#FAFAFA" }}
     >
       <Stack
