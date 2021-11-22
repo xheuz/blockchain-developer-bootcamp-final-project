@@ -31,7 +31,7 @@ contract Trustee is Ownable, ReentrancyGuard {
     /**
      * @dev Emitted when `Testator` does a check-in.
      */
-    event CheckInDeadlineUpdated(address testator, Timers.Timestamp timestamp);
+    event CheckInDeadlineUpdated(address testator, uint256 timestamp);
 
     /**
      * @dev Emitted when `Testator` updates how often it will do a check-in.
@@ -138,8 +138,8 @@ contract Trustee is Ownable, ReentrancyGuard {
      */
     modifier isUnique(address _beneficiary) {
         bool found = false;
-        for (uint256 i = 0; i < _testators[msg.sender].length; i++) {
-            uint256 _trustIndex = _testators[msg.sender][i];
+        for (uint256 i = 0; i < _testatorTrusts[msg.sender].length; i++) {
+            uint256 _trustIndex = _testatorTrusts[msg.sender][i];
             if (_trusts[_trustIndex].beneficiary == _beneficiary) {
                 found = true;
                 break;
@@ -172,7 +172,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         }
 
         _testators[msg.sender].checkInDeadline.setDeadline(
-            _now + _testators[msg.sender].checkInFrequencyInDays
+            uint64(_now + _testators[msg.sender].checkInFrequencyInDays)
         );
 
         emit CheckInDeadlineUpdated(msg.sender, _now);
@@ -275,11 +275,13 @@ contract Trustee is Ownable, ReentrancyGuard {
         external
         view
         isTestator
-        returns (Trust[] memory trusts)
+        returns (Trust[] memory)
     {
+        Trust[] memory trusts = new Trust[](_testatorTrusts[msg.sender].length);
         for (uint256 i = 0; i < _testatorTrusts[msg.sender].length; i++) {
-            trusts.push(_trusts[_testatorTrusts[msg.sender][i]]);
+            trusts[i] = (_trusts[_testatorTrusts[msg.sender][i]]);
         }
+        return trusts;
     }
 
     /**
@@ -332,11 +334,13 @@ contract Trustee is Ownable, ReentrancyGuard {
         external
         view
         isBeneficiary
-        returns (Trust[] memory trusts)
+        returns (Trust[] memory)
     {
+        Trust[] memory trusts = new Trust[](_beneficiaryTrusts[msg.sender].length);
         for (uint256 i = 0; i < _beneficiaryTrusts[msg.sender].length; i++) {
-            trusts.push(_trusts[_beneficiaryTrusts[msg.sender][i]]);
+            trusts[i] = (_trusts[_beneficiaryTrusts[msg.sender][i]]);
         }
+        return trusts;
     }
 
     /**
