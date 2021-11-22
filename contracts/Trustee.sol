@@ -224,10 +224,11 @@ contract Trustee is Ownable, ReentrancyGuard {
 
         // get trust index
         trustIndex = _trusts.length - 1;
+        totalBalanceTrusted += msg.value;
 
         // update testator properties
         if (_testatorTrusts[msg.sender].length == 0) totalTestators++;
-        _testators[msg.sender].balanceInTrusts += amount;
+        _testators[msg.sender].balanceInTrusts += msg.value;
         _testatorTrusts[msg.sender].push(trustIndex);
         _setCheckInDeadline();
 
@@ -255,6 +256,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         // update state
         _trusts[_trustIndex].state = TrustState.CANCELED;
         _trusts[_trustIndex].balance = 0;
+        totalBalanceTrusted -= _trusts[_trustIndex].balance;
 
         // send assets to testator
         _setCheckInDeadline();
@@ -365,6 +367,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         // update state
         _trusts[_trustIndex].state = TrustState.CLAIMED;
         _trusts[_trustIndex].balance = 0;
+        totalBalanceTrusted -= _trusts[_trustIndex].balance;
 
         // send assets to testator
         (bool sent, ) = msg.sender.call{value: _trusts[_trustIndex].balance}(
