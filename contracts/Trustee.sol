@@ -4,164 +4,197 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./Trust.sol";
+import "@openzeppelin/contracts/utils/Timers.sol";
 
 contract Trustee is Ownable, ReentrancyGuard {
-    // logs every time a beneficiary is added
-    event BeneficiaryAdded(
-        address indexed testator,
-        address indexed beneficiary,
-        address indexed trustAddress
-    );
-    // logs every time a beneficiary is removed
-    event BeneficiaryRemoved(
-        address indexed testator,
-        address indexed beneficiary,
-        address indexed trustAddress
-    );
-    // logs every time a beneficiary is replaced by another one
-    event BeneficiaryChanged(
-        address indexed testator,
-        address oldBeneficiary,
-        address newBeneficiary
-    );
-    event LastCheckInUpdated(address testator, uint time);
-    event CheckInFrequencyUpdated(address testator, uint time);
-    event Deposited(address indexed testator, uint value, address nft);
-    event TrustClaimed(address indexed testator, address indexed trustAddress);
+    using Timers for Timers.Timestamp;
 
-    uint public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
-    uint public testatorsCount = 0;
-    uint public beneficiariesCount = 0;
+    /**
+     * @dev Emitted when `Trust` is added from `testator` to `beneficiary`.
+     */
+    event TrustCreated(
+        address indexed testator,
+        address indexed beneficiary,
+        uint256 index
+    );
+
+    /**
+     * @dev Emitted when `Testator` canceled a `trust`.
+     */
+    event TrustCanceled(address indexed testator, uint256 index);
+
+    /**
+     * @dev Emitted when `Beneficiary` claim a `trust`.
+     */
+    event TrustClaimed(address indexed beneficiary, uint256 index);
+
+    /**
+     * @dev Emitted when `Testator` does a check-in.
+     */
+    event CheckInDeadlineUpdated(address testator, Timers.Timestamp timestamp);
+
+    /**
+     * @dev Emitted when `Testator` updates how often it will do a check-in.
+     */
+    event CheckInFrequencyUpdated(address testator, uint256 time);
+
+    /**
+     * @dev Emitted when `Testator` place balance into a `Trust`.
+     */
+    event Deposited(address indexed testator, uint256 value, address nft);
+
+    // default time in days to set check in frequency
+    uint256 public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
+
+    // counters
+    uint256 public totalTestators = 0;
+    uint256 public totalBeneficiaries = 0;
+    uint256 public totalBalanceTrusted = 0;
+
+    // all trusts
+    Trust[] private _trusts;
 
     // testators addresses are mapped to the dataType that must be unique
-    mapping(address => Testator) private testators;
+    mapping(address => Testator) private _testators;
+    mapping(address => uint256[]) private _testatorTrusts;
     // beneficiaries can have to multiple trusts from different testators
-    mapping(address => address[]) private beneficiaryToTrusts;
-    mapping(address => address) private trustToTestator;
+    mapping(address => uint256[]) private _beneficiaryTrusts;
 
-    // data structure that defines all information related to a testator
-    struct Testator {
-        // last time a check-in as registered
-        uint lastCheckIn;
-        // how often a check-in is needed
-        uint checkInFrequencyInDays;
-        // all beneficiaries related to testator
-        address[] beneficiaries;
-        // keeps track of beneficiary position in the array
-        // beneficiary must be unique per testator
-        mapping(address => uint) _indexes;
-        // one to one relationship between beneficiary and trust address
-        mapping(address => address) beneficiaryToTrust;
+    // trust statusses
+    enum TrustState {
+        PENDING,
+        CLAIMED,
+        CANCELED
     }
+
+    // trust
+    struct Trust {
+        address testator;
+        address beneficiary;
+        uint256 balance;
+        uint256 timestamp;
+        TrustState state;
+    }
+
+    struct Testator {
+        // check-in must be done before this time
+        Timers.Timestamp checkInDeadline;
+        // how often a check-in is needed
+        uint256 checkInFrequencyInDays;
+        // all beneficiaries related to testator
+        uint256 balanceInTrusts;
+    }
+
+    receive() external payable {}
+
+    fallback() external payable {}
 
     /** Function Modifiers
      */
 
+    /**
+     * @dev Throws if called by any account that is not a testator.
+     */
     modifier isTestator() {
         require(
-            testators[msg.sender].beneficiaries.length > 0,
+            _testatorTrusts[msg.sender].length > 0,
             "You need to add a beneficiary first."
         );
         _;
     }
 
+    /**
+     * @dev Throws if called by any account that is not a beneficiary of the
+     * especified trust.
+     */
+    modifier trustBelongs(uint256 _trustIndex, uint256[] memory array) {
+        bool found = false;
+        for (uint256 i = 0; i < array.length; i++) {
+            if (array[i] == _trustIndex) {
+                found = true;
+                break;
+            }
+        }
+        require(found == true, "Trust does not belong.");
+        _;
+    }
+
+    modifier trustIsPending(uint256 _trustIndex) {
+        require(
+            _trusts[_trustIndex].state == TrustState.PENDING,
+            "Trust is already disabled."
+        );
+        _;
+    }
+
+    /**
+     * @dev Throws if called by any account that is not a beneficiary.
+     */
     modifier isBeneficiary() {
         require(
-            beneficiaryToTrusts[msg.sender].length > 0,
+            _beneficiaryTrusts[msg.sender].length > 0,
             "You are not a beneficiary."
         );
         _;
     }
 
-    modifier isBeneficiaryOf(address _trust) {
+    /**
+     * @dev Throws if called by testator and the beneficiary is not unique for him.
+     */
+    modifier isUnique(address _beneficiary) {
         bool found = false;
-        for (uint i = 0; i < beneficiaryToTrusts[msg.sender].length; i++) {
-            if (beneficiaryToTrusts[msg.sender][i] == _trust) {
+        for (uint256 i = 0; i < _testators[msg.sender].length; i++) {
+            uint256 _trustIndex = _testators[msg.sender][i];
+            if (_trusts[_trustIndex].beneficiary == _beneficiary) {
                 found = true;
                 break;
             }
         }
-        require(found == true, "Impossible to claim.");
+        require(found == false, "Beneficiary must be unique.");
         _;
     }
 
     /** Helper Functions
      */
 
-    function _daysToSeconds(uint _days) internal pure returns (uint) {
+    function _daysToSeconds(uint256 _days) internal pure returns (uint256) {
         // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
         return _days * (24 * 60 * 60);
     }
 
-    function _secondsToDays(uint _seconds) internal pure returns (uint) {
+    function _secondsToDays(uint256 _seconds) internal pure returns (uint256) {
         // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
         return _seconds / (24 * 60 * 60);
     }
 
     /**
-     * @notice Removes an element from array.
-     * @dev Removes element from array but does not preserve order. This is very
-     * @dev fast and cost efficient.
+     * @dev Sets checkInDeadline property for Testator.
      */
-    function _removeElementByIndex(address[] storage _array, uint _index)
-        internal
-    {
-        _array[_index] = _array[_array.length - 1];
-        _array.pop();
-    }
-
-    /**
-     * @notice Returns index of an element from array.
-     * @dev Returns index of an element from array.
-     * @return index of the element.
-     */
-    function _getElementIndex(address[] memory _array, address _element)
-        internal
-        pure
-        returns (uint index)
-    {
-        for (uint i = 0; i < _array.length; i++) {
-            if (_array[i] == _element) {
-                index = i;
-                break;
-            }
+    function _setCheckInDeadline() internal {
+        uint256 _now = block.timestamp;
+        if (_testators[msg.sender].checkInFrequencyInDays <= 0) {
+            _setCheckInFrequencyInDays(0);
         }
-    }
 
-    /**
-     * @dev Sets lastCheckIn property for Testator.
-     */
-    function _setLastCheckIn() internal {
-        uint _now = block.timestamp;
-        testators[msg.sender].lastCheckIn = _now;
+        _testators[msg.sender].checkInDeadline.setDeadline(
+            _now + _testators[msg.sender].checkInFrequencyInDays
+        );
 
-        emit LastCheckInUpdated(msg.sender, _now);
+        emit CheckInDeadlineUpdated(msg.sender, _now);
     }
 
     /**
      * @dev Sets default check-in frequency for Testator.
      * @param _days amount of days required before trust become claimable
      */
-    function _setCheckInFrequencyInDays(uint _days) internal {
-        uint newFrequency = _days == 0
+    function _setCheckInFrequencyInDays(uint256 _days) internal {
+        uint256 newFrequency = _days == 0
             ? DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS
             : _daysToSeconds(_days);
 
-        testators[msg.sender].checkInFrequencyInDays = newFrequency;
+        _testators[msg.sender].checkInFrequencyInDays = newFrequency;
 
         emit CheckInFrequencyUpdated(msg.sender, newFrequency);
-    }
-
-    /**
-     * @dev Creates a Trust that will received all beneficiary assets.
-     * @return trustAddress which is the new Trust
-     */
-    function _createTrust()
-        internal
-        returns (address payable trustAddress)
-    {
-        trustAddress = payable(address(new Trust(address(this))));
     }
 
     /** Testator Functions
@@ -175,137 +208,96 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev property of the Testator if nothing is configured.
      * @param _beneficiary is the address that will received the trust assets.
      */
-    function addBeneficiary(address _beneficiary) public payable {
-        // TODO: needs to add a check to confirm beneficiary doesn't have
-        // a trust associated to it. A helper function that checks if _contains()
-        // this is important because a trust can be lost forever if a new one is set
-        // pointing to the same beneficiary.
+    function createTrust(address _beneficiary, uint256 amount)
+        public
+        payable
+        isUnique(_beneficiary)
+    {
+        require(msg.value >= amount, "Not enough balance.");
+        uint256 trustIndex;
 
-        // 1. Create the Trust (call helper function)
-        address payable trustAddress = _createTrust();
-        // 2. Increment testatorsCount if new testator
-        if (testators[msg.sender].beneficiaries.length == 0) testatorsCount++;
-        // 3. Add beneficiary to testator
-        testators[msg.sender].beneficiaries.push(_beneficiary);
-        testators[msg.sender].beneficiaryToTrust[_beneficiary] = trustAddress;
-        if (testators[msg.sender].checkInFrequencyInDays == 0)
-            _setCheckInFrequencyInDays(0);
-        _setLastCheckIn();
-        // 4. Add beneficiary to beneficiaryToTrusts
-        beneficiaryToTrusts[_beneficiary].push(trustAddress);
-        beneficiariesCount++;
+        // add trust to array
+        _trusts.push(
+            Trust(
+                msg.sender,
+                _beneficiary,
+                amount,
+                block.timestamp,
+                TrustState.PENDING
+            )
+        );
 
-        // 5. Log the event of adding a new beneficiary
-        emit BeneficiaryAdded(msg.sender, _beneficiary, trustAddress);
+        // get trust index
+        trustIndex = _trusts.length - 1;
+
+        // update testator properties
+        if (_testatorTrusts[msg.sender].length == 0) totalTestators++;
+        _testators[msg.sender].balanceInTrusts += amount;
+        _testatorTrusts[msg.sender].push(trustIndex);
+        _setCheckInDeadline();
+
+        // update beneficiary
+        _beneficiaryTrusts[msg.sender].push(trustIndex);
+        totalBeneficiaries++;
+
+        emit TrustCreated(msg.sender, _beneficiary, trustIndex);
     }
 
     /**
-     * @notice Removes a beneficiary and destroys it's Trust.
-     * @dev Encapsulates removing the beneficiary and releasing the assets to
+     * @notice Set Trust state to CANCELED.
+     * @dev Encapsulates updating trust to CANCELED and releasing the assets to
      * @dev Testator.
-     * @param _beneficiary is the address that will be removed.
+     * @param _trustIndex is the index of the trust that will be updated.
      */
-    function removeBeneficiary(address _beneficiary) public payable isTestator {
-        Testator storage testator = testators[msg.sender];
-        // 1. Destroy trust
-        address payable trustAddress = payable(
-            testator.beneficiaryToTrust[_beneficiary]
-        );
-        Trust trust = Trust(trustAddress);
-        trust.destroy();
-        // 2. Remove beneficiary from testator
-        uint index = _getElementIndex(testator.beneficiaries, _beneficiary);
-        _removeElementByIndex(testator.beneficiaries, index);
-        delete testator.beneficiaryToTrust[_beneficiary];
-        // 3. Remove beneficiary from beneficiaryToTrusts
-        index = _getElementIndex(
-            beneficiaryToTrusts[_beneficiary],
-            trustAddress
-        );
-        _removeElementByIndex(beneficiaryToTrusts[_beneficiary], index);
-        if (beneficiaryToTrusts[_beneficiary].length == 0)
-            delete beneficiaryToTrusts[_beneficiary];
-        // 4. Decrement testatorsCount if no testator
-        if (testators[msg.sender].beneficiaries.length == 0) testatorsCount--;
-        beneficiariesCount--;
-
-        // 5. Log the event of removing a beneficiary
-        emit BeneficiaryRemoved(msg.sender, _beneficiary, trustAddress);
-    }
-
-    /**
-     * @notice Replaces a beneficiary with another one.
-     * @dev This requires to check if _newBeneficiary doesnt' have another Trust
-     * @dev defined already and that _oldBeneficiary exists for Testator.
-     * @param _oldBeneficiary is the address that will be replaced.
-     * @param _newBeneficiary is the address that will received the trust assets.
-     */
-    function changeBeneficiary(address _oldBeneficiary, address _newBeneficiary)
+    function cancelTrust(uint256 _trustIndex)
         public
         payable
         isTestator
+        trustIsPending(_trustIndex)
+        trustBelongs(_trustIndex, _testatorTrusts[msg.sender])
+        nonReentrant
     {
-        // TODO: prevent the change if the newBeneficiary already have a trust
-        // from the same testator
+        // update state
+        _trusts[_trustIndex].state = TrustState.CANCELED;
+        _trusts[_trustIndex].balance = 0;
 
-        Testator storage testator = testators[msg.sender];
-        // 1. Update testator
-        address trustAddress = testator.beneficiaryToTrust[_oldBeneficiary];
-        uint index = _getElementIndex(
-            testator.beneficiaries,
-            _oldBeneficiary
+        // send assets to testator
+        _setCheckInDeadline();
+        (bool sent, ) = msg.sender.call{value: _trusts[_trustIndex].balance}(
+            ""
         );
-        testator.beneficiaries[index] = _newBeneficiary;
-        testator.beneficiaryToTrust[_newBeneficiary] = trustAddress;
-        delete testator.beneficiaryToTrust[_oldBeneficiary];
-        // 2. Update beneficiaryToTrusts
-        beneficiaryToTrusts[_newBeneficiary].push(trustAddress);
-        index = _getElementIndex(
-            beneficiaryToTrusts[_oldBeneficiary],
-            trustAddress
-        );
-        _removeElementByIndex(beneficiaryToTrusts[_oldBeneficiary], index);
-        if (beneficiaryToTrusts[_oldBeneficiary].length == 0)
-            delete beneficiaryToTrusts[_oldBeneficiary];
+        require(sent, "Transfer Failed");
 
-        emit BeneficiaryChanged(msg.sender, _oldBeneficiary, _newBeneficiary);
+        emit TrustCanceled(msg.sender, _trustIndex);
     }
 
     /**
-     * @notice List all beneficiaries indexes for Testator
-     * @dev This will reveal all indexes for Testator, but not the actual trust
-     * @dev addresses. That will require accessing beneficiaryToTrusts on client.
-     * @return beneficiariesInstances for beneficiaries array.
+     * @notice Retrieve all trust realted to Testator.
+     * @dev It will access the testators mapping and build the trusts list.
+     * @return trusts for testators.
      */
-    function getBeneficiaries()
+    function testatorTrusts()
         external
         view
         isTestator
-        returns (address[] memory)
+        returns (Trust[] memory trusts)
     {
-        return testators[msg.sender].beneficiaries;
+        for (uint256 i = 0; i < _testatorTrusts[msg.sender].length; i++) {
+            trusts.push(_trusts[_testatorTrusts[msg.sender][i]]);
+        }
     }
 
     /**
-     * @notice Retrieve trust related to beneficiary for Testator
-     * @dev It will access the mapping that's inside the testator.
-     * @return trustAddress for beneficiary.
+     * @notice Retrieves testator details.
+     * @return Testator details as object.
      */
-    function getBeneficiaryTrust(address _beneficiary)
+    function testatorDetails()
         external
         view
         isTestator
-        returns (address trustAddress)
+        returns (Testator memory)
     {
-        return testators[msg.sender].beneficiaryToTrust[_beneficiary];
-    }
-
-    /**
-     * @notice Retrieves last time testator checked-in.
-     * @return lastCheckIn of the Testator.
-     */
-    function getLastCheckIn() external view isTestator returns (uint) {
-        return testators[msg.sender].lastCheckIn;
+        return _testators[msg.sender];
     }
 
     /**
@@ -315,21 +307,8 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev of the Testator. Needs to be abstracted to a helper function to
      * @dev enable the possibility to be called from other functions as well.
      */
-    function setLastCheckIn() external isTestator {
-        _setLastCheckIn();
-    }
-
-    /**
-     * @notice Retrieves how often a check-in must be done in days.
-     * @dev Seconds needs to be converted to days.
-     */
-    function getCheckInFrequencyInDays()
-        external
-        view
-        isTestator
-        returns (uint)
-    {
-        return _secondsToDays(testators[msg.sender].checkInFrequencyInDays);
+    function setCheckInDeadline() external isTestator {
+        _setCheckInDeadline();
     }
 
     /**
@@ -339,45 +318,11 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev Days needs to be converted to seconds in order to do calculations.
      * @param _days amount of days required to do a check-in.
      */
-    function setCheckInFrequencyInDays(uint _days) external isTestator {
+    function setCheckInFrequencyInDays(uint256 _days) external isTestator {
         require(_days >= 30, "At least 30 days are require between check-ins.");
-        _setLastCheckIn();
         _setCheckInFrequencyInDays(_days);
+        _setCheckInDeadline();
     }
-
-    /**
-     * @notice Send assets to beneficiary trust.
-     * @dev Transfer value to Trust contract directly, never to beneficiary.
-     * @dev The trust will act as a custodian for the assets.
-     * @param _beneficiary is the address that will received the trust assets.
-     */
-    function deposit(address _beneficiary)
-        external
-        payable
-        isTestator
-        nonReentrant
-    {
-        address payable _trust = payable(
-            testators[msg.sender].beneficiaryToTrust[_beneficiary]
-        );
-        (bool sent, ) = _trust.call{value: msg.value}("");
-        require(sent, "Failed to send Ether");
-
-        emit Deposited(msg.sender, msg.value, address(0));
-    }
-
-    /**
-     * @notice Send NFT assets to beneficiary trust.
-     * @dev Transfer value to Trust contract directly, never to beneficiary.
-     * @dev Then beneficiary can claim once check-in time has expired.
-     * @param _beneficiary is the address that will received the trust assets.
-     * @param _nft token that will be transfered.
-     */
-    function depositNFT(address _beneficiary, uint _nft)
-        external
-        payable
-        isTestator
-    {}
 
     /** Beneficiary Functions
      */
@@ -385,29 +330,49 @@ contract Trustee is Ownable, ReentrancyGuard {
     /**
      * @notice List all trusts that are related to the caller where caller
      * @notice is the beneficiary.
-     * @dev This function is the reason why beneficiaryToTrusts storage exist.
+     * @dev This function is the reason why _beneficiaryTrusts storage exist.
      * @return trusts related to beneficiary.
      */
-    function getTrusts()
+    function beneficiaryTrusts()
         external
         view
         isBeneficiary
-        returns (address[] memory trusts)
+        returns (Trust[] memory trusts)
     {
-        return beneficiaryToTrusts[msg.sender];
+        for (uint256 i = 0; i < _beneficiaryTrusts[msg.sender].length; i++) {
+            trusts.push(_trusts[_beneficiaryTrusts[msg.sender][i]]);
+        }
     }
 
     /**
-     * @notice List all trusts that are related to the caller where caller
-     * @notice is the beneficiary.
-     * @dev This function is the reason why beneficiaryToTrusts storage exist.
+     * @notice Set Trust state to CLAIMED.
+     * @dev Encapsulates updating trust to CLAIMED and releasing the assets to
+     * Beneficiary. This is true only if checkInDeadline has expired.
+     * @param _trustIndex is the index of the trust that will be updated.
      */
-    function claim(address _trust)
-        external
-        isBeneficiaryOf(_trust)
+    function claimTrust(uint256 _trustIndex)
+        public
+        payable
+        isBeneficiary
+        trustIsPending(_trustIndex)
+        trustBelongs(_trustIndex, _beneficiaryTrusts[msg.sender])
+        nonReentrant
     {
-        // require(block.timestamp >= testator.lastCheckIn + testator.checkInFrequencyInDays, "Can not claim trust");
-        Trust trust = Trust(payable(_trust));
-        trust.release(payable(msg.sender));
+        require(
+            _testators[msg.sender].checkInDeadline.isExpired(),
+            "Trust can not be claimed yet."
+        );
+
+        // update state
+        _trusts[_trustIndex].state = TrustState.CLAIMED;
+        _trusts[_trustIndex].balance = 0;
+
+        // send assets to testator
+        (bool sent, ) = msg.sender.call{value: _trusts[_trustIndex].balance}(
+            ""
+        );
+        require(sent, "Transfer Failed");
+
+        emit TrustClaimed(msg.sender, _trustIndex);
     }
 }
