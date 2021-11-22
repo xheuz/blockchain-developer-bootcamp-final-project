@@ -64,16 +64,10 @@ export default function BeneficiaryAdd() {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     try {
-      // const payload = {
-      //   name: beneficiary.firstname + " " + beneficiary.lastname,
-      //   address: beneficiary.address,
-      //   date: new Date().toISOString(),
-      //   trustAddress: mockAddress(),
-      // };
-      createBeneficiary(beneficiary.address);
-      fetchBeneficiaries();
+      await createBeneficiary(beneficiary.address);
+      await fetchBeneficiaries();
       setShowAddBeneficiaryDialog(false);
-    } catch {}
+    } catch (error) {}
   };
 
   return (
