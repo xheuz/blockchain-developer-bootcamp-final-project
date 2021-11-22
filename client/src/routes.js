@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
+import BeneficiaryContextProvider from "./state/beneficiaries";
 
-const Landing = lazy(() => import("./pages/Landing"));
+export const Landing = lazy(() => import("./pages/Landing"));
 const Home = lazy(() => import("./pages/Home"));
-const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
+export const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
 
 const routes = [
   {
@@ -17,7 +18,9 @@ const routes = [
     path: "/",
     element: (
       <Suspense fallback={<>...</>}>
-        <Beneficiaries />
+        <BeneficiaryContextProvider>
+          <Beneficiaries />
+        </BeneficiaryContextProvider>
       </Suspense>
     ),
   },

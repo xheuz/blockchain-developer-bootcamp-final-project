@@ -6,7 +6,7 @@ import Section from "./Section";
 export default function Page({ title, helpText, actionRight, actionLeft, children }) {
   return (
     <Section sx={{ flexGrow: 1 }}>
-      <Box sx={{ flexGrow: 1, paddingTop: 1, paddingBottom: 1 }}>
+      <Box sx={{ flexGrow: 1, paddingTop: 3, paddingBottom: 1 }}>
         <Typography
           variant="h5"
           component="div"

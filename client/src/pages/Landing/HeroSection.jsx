@@ -1,8 +1,8 @@
 import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Section from "../components/Section";
-import { ReactComponent as LogoIcon } from "../assets/logo.svg";
+import Section from "../../components/Section";
+import { ReactComponent as LogoIcon } from "../../assets/logo.svg";
 
 export default function HeroSection() {
   return (
@@ -21,7 +21,7 @@ export default function HeroSection() {
         Onyx Trust
       </Typography>
       <Typography
-        variant="h4"
+        variant="h5"
         component="div"
         color="primary"
         textAlign={"center"}
@@ -29,24 +29,24 @@ export default function HeroSection() {
         sx={{ textTransform: "uppercase" }}
         gutterBottom
       >
-        Top decentralized solution to guard your assets
-      </Typography>
-      <Typography
-        variant="h6"
-        component="div"
-        textAlign={"center"}
-        gutterBottom
-      >
         Keep taking care of your{" "}
         <Typography
-          variant="h6"
+          variant="h5"
           component="span"
           style={{ fontWeight: "bold" }}
           sx={{ fontStyle: "italic" }}
         >
           loved ones
         </Typography>
-        , once you are gone.
+        , once you are gone
+      </Typography>
+      <Typography
+        variant="h6"
+        component="div"
+        textAlign={"center"}
+        gutterBottom
+        >
+        Top decentralized solution to guard your assets on the Ethereum blockchain
       </Typography>
     </Section>
   );

@@ -1,6 +1,5 @@
 import React from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -8,14 +7,18 @@ import CardContent from "@mui/material/CardContent";
 import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 
-import config from "../../store/config";
-
+import Button from "../../components/Button";
 import Page from "../../components/Page";
-import { ReactComponent as EthereumIcon } from "../../assets/ethereumBlue.svg";
+import EthereumIcon from "../../components/EthereumIcon";
+
+import { ETHERSCAN_ADDRESS_URL } from "../../config";
+import { useAppContext } from "../../state/hooks";
+import { useTestator } from "../../hooks/useTrustee";
 
 const LinkIcon = ({ children, to, sx, color = "primary" }) => {
   return (
@@ -38,9 +41,30 @@ const style = {
   },
 };
 
-export default function BeneficiaryDetailsCard({ selected, handleDelete }) {
-  const { name, address, trustAddress } = selected;
-  console.log(trustAddress);
+export default function BeneficiaryDetailsCard() {
+  const {
+    trustBalance,
+    selectedBeneficiary,
+    removeBeneficiary,
+    setShowViewBeneficiaryDialog,
+  } = useAppContext();
+  const { depositEth, deleteBeneficiary, fetchTrustBalance } = useTestator();
+  const [amount, setAmount] = React.useState(0);
+  const { name, address, trustAddress } = selectedBeneficiary;
+
+  const handleOnSubmit = async () => {
+    await depositEth(address, amount);
+    await fetchTrustBalance(trustAddress);
+  };
+  const handleOnChange = (e) => {
+    setAmount(e.target.value);
+  };
+
+  const handleDelete = async () => {
+    await deleteBeneficiary(address);
+    removeBeneficiary(selectedBeneficiary);
+    setShowViewBeneficiaryDialog(false);
+  };
 
   return (
     <Page title="Beneficiary" helpText="Details About Your Beneficiary">
@@ -57,7 +81,7 @@ export default function BeneficiaryDetailsCard({ selected, handleDelete }) {
                 </Avatar>
               }
               action={
-                <LinkIcon to={`${config.ETHERSCAN_URL}${address}`}>
+                <LinkIcon to={`${ETHERSCAN_ADDRESS_URL}/${address}`}>
                   <LaunchOutlinedIcon />
                 </LinkIcon>
               }
@@ -99,7 +123,7 @@ export default function BeneficiaryDetailsCard({ selected, handleDelete }) {
               action={
                 <LinkIcon
                   color="default"
-                  to={`${config.ETHERSCAN_URL}${address}`}
+                  to={`${ETHERSCAN_ADDRESS_URL}/${address}`}
                   sx={{ color: "#3366FF" }}
                 >
                   <LaunchOutlinedIcon />
@@ -107,11 +131,17 @@ export default function BeneficiaryDetailsCard({ selected, handleDelete }) {
               }
             />
             <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-around" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-around",
+                }}
+              >
                 {/* <Box component="div" sx={{ flexGrow: 1 }} /> */}
                 <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Avatar sx={{ backgroundColor: "white" }}>
-                    <EthereumIcon />
+                    <EthereumIcon color="secondary" />
                   </Avatar>
                   <Typography
                     variant="h6"
@@ -119,9 +149,20 @@ export default function BeneficiaryDetailsCard({ selected, handleDelete }) {
                     textAlign="center"
                     sx={{ flexGrow: 1 }}
                   >
-                    651,321,654
+                    {trustBalance} ETH
                   </Typography>
                 </Box>
+              </Box>
+              <Box component="form" onSubmit={(e) => e.preventDefault()}>
+                <TextField
+                  color="secondary"
+                  type="number"
+                  value={amount}
+                  onChange={handleOnChange}
+                />
+                <Button color="secondary" onClick={handleOnSubmit}>
+                  Send
+                </Button>
               </Box>
             </CardContent>
             <Box

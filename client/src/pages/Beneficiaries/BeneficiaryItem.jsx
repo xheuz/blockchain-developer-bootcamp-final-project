@@ -4,21 +4,23 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardHeader from "@mui/material/CardHeader";
-import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-export default function BeneficiaryItem({
-  name,
-  date,
-  address,
-  trustAddress,
-  handleOpenDetails,
-  handleSelected,
-}) {
-  const handleOnClick = () => {
-    handleOpenDetails();
-    handleSelected({ name, date, address, trustAddress });
+import { useAppContext } from "../../state/hooks";
+import { useTestator } from "../../hooks/useTrustee";
+
+export default function BeneficiaryItem({ beneficiary }) {
+  const { fetchTrustBalance } = useTestator();
+  const { setSelectedBeneficiary, setShowViewBeneficiaryDialog } =
+    useAppContext();
+
+  const { name, address } = beneficiary;
+
+  const handleOnClick = async () => {
+    fetchTrustBalance(beneficiary.trustAddress);
+    setShowViewBeneficiaryDialog(true);
+    setSelectedBeneficiary(beneficiary);
   };
 
   return (
@@ -30,19 +32,10 @@ export default function BeneficiaryItem({
               {name.slice(0, 2).toUpperCase()}
             </Avatar>
           }
-          action={
-            <IconButton color="primary">
-              <InfoOutlinedIcon />
-            </IconButton>
-          }
+          action={<InfoOutlinedIcon color="primary" />}
           title={
             <Typography variant="subtitle1" component="div">
               {name}
-            </Typography>
-          }
-          subheader={
-            <Typography variant="caption" component="div">
-              {date}
             </Typography>
           }
         />

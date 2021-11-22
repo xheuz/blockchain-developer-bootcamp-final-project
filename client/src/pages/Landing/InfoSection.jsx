@@ -2,15 +2,10 @@ import React from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import ChangeCircleOutlinedIcon from "@mui/icons-material/ChangeCircleOutlined";
-import Filter1OutlinedIcon from "@mui/icons-material/Filter1Outlined";
-import Filter2OutlinedIcon from "@mui/icons-material/Filter2Outlined";
-import Filter3OutlinedIcon from "@mui/icons-material/Filter3Outlined";
-import AddModeratorOutlinedIcon from "@mui/icons-material/AddModeratorOutlined";
-import Section from "../components/Section";
+import Section from "../../components/Section";
 
 const info = [
   {

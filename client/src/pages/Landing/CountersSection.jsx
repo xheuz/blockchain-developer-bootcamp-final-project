@@ -1,20 +1,9 @@
 import React from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import Section from "../components/Section";
 import Typography from "@mui/material/Typography";
-
-// TODO: replace counters with contract ones to display real numbers
-const counters = [
-  {
-    name: "Testators",
-    count: "3,498",
-  },
-  {
-    name: "Beneficiaries",
-    count: "17,490",
-  },
-];
+import Section from "../../components/Section";
+import { useAppContext } from "../../state/hooks";
 
 function CounterBox({ name, count }) {
   return (
@@ -40,6 +29,18 @@ function CounterBox({ name, count }) {
   );
 }
 export default function CountersSection() {
+  const { testatorsCount, beneficiariesCount } = useAppContext();
+  const counters = [
+    {
+      name: "Testators",
+      count: testatorsCount,
+    },
+    {
+      name: "Beneficiaries",
+      count: beneficiariesCount,
+    },
+  ];
+
   return (
     <Section sx={{ padding: 2, flexGrow: 1, backgroundColor: "#00AB55" }}>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>

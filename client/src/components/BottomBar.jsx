@@ -10,8 +10,10 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import { ReactComponent as LogoIcon } from "../assets/logo.svg";
 
+import { useAppContext } from "../state/hooks";
+
 export default function BottomBar() {
-  const [value, setValue] = React.useState(0);
+  const { showPage, setShowPage } = useAppContext();
 
   return (
     <Paper
@@ -27,24 +29,26 @@ export default function BottomBar() {
             bottom: 30,
             zIndex: 1000,
           }}
+          value={"fab"}
+          onClick={() => setShowPage("fab")}
         >
           <LogoIcon />
         </Fab>
       </Box>
       <BottomNavigation
         showLabels
-        value={value}
+        value={showPage}
         onChange={(event, newValue) => {
-          setValue(newValue);
+          setShowPage(newValue);
         }}
       >
         <BottomNavigationAction label="" icon={<HomeOutlinedIcon />} />
         <BottomNavigationAction label="" icon={<AddModeratorOutlinedIcon />} />
-        <BottomNavigationAction label="" icon={<SecurityOutlinedIcon />} />
-        <BottomNavigationAction
+        {/* <BottomNavigationAction label="" icon={<SecurityOutlinedIcon />} /> */}
+        {/* <BottomNavigationAction
           label=""
           icon={<AdminPanelSettingsOutlinedIcon />}
-        />
+        /> */}
       </BottomNavigation>
     </Paper>
   );
