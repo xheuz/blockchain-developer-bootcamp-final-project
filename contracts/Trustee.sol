@@ -38,11 +38,6 @@ contract Trustee is Ownable, ReentrancyGuard {
      */
     event CheckInFrequencyUpdated(address testator, uint256 time);
 
-    /**
-     * @dev Emitted when `Testator` place balance into a `Trust`.
-     */
-    event Deposited(address indexed testator, uint256 value, address nft);
-
     // default time in days to set check in frequency
     uint256 public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
 
