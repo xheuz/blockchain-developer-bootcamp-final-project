@@ -46,7 +46,7 @@ contract Trustee is Ownable, ReentrancyGuard {
     uint256 public totalBeneficiaries = 0;
     uint256 public totalBalanceTrusted = 0;
 
-    // all trusts
+    // collection of trusts
     Trust[] private _trusts;
 
     // testators addresses are mapped to the dataType that must be unique
@@ -64,6 +64,7 @@ contract Trustee is Ownable, ReentrancyGuard {
 
     // trust
     struct Trust {
+        uint256 id;
         address testator;
         address beneficiary;
         uint256 balance;
@@ -209,11 +210,13 @@ contract Trustee is Ownable, ReentrancyGuard {
         isUnique(_beneficiary)
     {
         require(msg.value >= amount, "Not enough balance.");
-        uint256 trustIndex;
+        // id will always be the length of trusts array
+        uint256 trustIndex = _trusts.length;
 
         // add trust to array
         _trusts.push(
             Trust(
+                trustIndex,
                 msg.sender,
                 _beneficiary,
                 amount,
@@ -223,18 +226,17 @@ contract Trustee is Ownable, ReentrancyGuard {
         );
 
         // get trust index
-        trustIndex = _trusts.length - 1;
         totalBalanceTrusted += msg.value;
 
         // update testator properties
         if (_testatorTrusts[msg.sender].length == 0) totalTestators++;
-        _testators[msg.sender].balanceInTrusts += msg.value;
+        _testators[msg.sender].balanceInTrusts = msg.value;
         _testatorTrusts[msg.sender].push(trustIndex);
         _setCheckInDeadline();
 
         // update beneficiary
-        _beneficiaryTrusts[msg.sender].push(trustIndex);
-        totalBeneficiaries++;
+        if (_beneficiaryTrusts[_beneficiary].length == 0) totalBeneficiaries++;
+        _beneficiaryTrusts[_beneficiary].push(trustIndex);
 
         emit TrustCreated(msg.sender, _beneficiary, trustIndex);
     }
@@ -253,16 +255,16 @@ contract Trustee is Ownable, ReentrancyGuard {
         trustBelongs(_trustIndex, _testatorTrusts[msg.sender])
         nonReentrant
     {
+        uint256 amount = _trusts[_trustIndex].balance;
+
         // update state
         _trusts[_trustIndex].state = TrustState.CANCELED;
+        totalBalanceTrusted -= amount;
         _trusts[_trustIndex].balance = 0;
-        totalBalanceTrusted -= _trusts[_trustIndex].balance;
+        _setCheckInDeadline();
 
         // send assets to testator
-        _setCheckInDeadline();
-        (bool sent, ) = msg.sender.call{value: _trusts[_trustIndex].balance}(
-            ""
-        );
+        (bool sent, ) = msg.sender.call{value: amount}("");
         require(sent, "Transfer Failed");
 
         emit TrustCanceled(msg.sender, _trustIndex);
@@ -338,7 +340,9 @@ contract Trustee is Ownable, ReentrancyGuard {
         isBeneficiary
         returns (Trust[] memory)
     {
-        Trust[] memory trusts = new Trust[](_beneficiaryTrusts[msg.sender].length);
+        Trust[] memory trusts = new Trust[](
+            _beneficiaryTrusts[msg.sender].length
+        );
         for (uint256 i = 0; i < _beneficiaryTrusts[msg.sender].length; i++) {
             trusts[i] = (_trusts[_beneficiaryTrusts[msg.sender][i]]);
         }
@@ -363,16 +367,16 @@ contract Trustee is Ownable, ReentrancyGuard {
             _testators[msg.sender].checkInDeadline.isExpired(),
             "Trust can not be claimed yet."
         );
+        uint256 amount = _trusts[_trustIndex].balance;
 
         // update state
         _trusts[_trustIndex].state = TrustState.CLAIMED;
+        totalBalanceTrusted -= amount;
         _trusts[_trustIndex].balance = 0;
-        totalBalanceTrusted -= _trusts[_trustIndex].balance;
 
-        // send assets to testator
-        (bool sent, ) = msg.sender.call{value: _trusts[_trustIndex].balance}(
-            ""
-        );
+        // send assets to beneficiary
+        address payable beneficiary = payable(_trusts[_trustIndex].beneficiary);
+        (bool sent, ) = beneficiary.call{value: amount}("");
         require(sent, "Transfer Failed");
 
         emit TrustClaimed(msg.sender, _trustIndex);
