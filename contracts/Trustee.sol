@@ -85,7 +85,9 @@ contract Trustee is Ownable, ReentrancyGuard {
 
     receive() external payable {}
 
-    fallback() external payable {}
+    fallback() external payable {
+        require(msg.data.length == 0);
+    }
 
     /** Function Modifiers
      */
