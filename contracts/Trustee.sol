@@ -46,6 +46,8 @@ contract Trustee is Ownable, ReentrancyGuard {
     uint256 public totalBeneficiaries = 0;
     uint256 public totalBalanceTrusted = 0;
 
+    // custody fee = 0.3% by default
+    uint256 private _custodyFee = 3;
     // collection of trusts
     Trust[] private _trusts;
 
@@ -178,6 +180,17 @@ contract Trustee is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Returns the value that will be transfer over the beneficiary at
+     * release time.
+     * @param _amount amount to be relased.
+     */
+    function _valueAfterFees(uint _amount) internal view returns (uint) {
+        // 1000 constant value used to calculate custody percentage to be
+        // retained.
+        return _amount - (_amount * _custodyFee / 1000);
+    }
+
+    /**
      * @dev Sets default check-in frequency for Testator.
      * @param _days amount of days required before trust become claimable
      */
@@ -189,6 +202,18 @@ contract Trustee is Ownable, ReentrancyGuard {
         _testators[msg.sender].checkInFrequencyInDays = newFrequency;
 
         emit CheckInFrequencyUpdated(msg.sender, newFrequency);
+    }
+
+    /** Owner Functions */
+
+    /**
+     * @dev Sets custody fee that will be retained as reward for keeping the
+     * assets locked. This value is divided by 1000 to allow percentages of
+     * 0.3% per example which is equals to 3/1000. See _valueAfterFees function.
+     * @param _fee amount to be retained.
+     */
+    function setCreationFee(uint _fee) public payable onlyOwner {
+        _custodyFee = _fee;
     }
 
     /** Testator Functions
@@ -352,33 +377,33 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @notice Set Trust state to CLAIMED.
      * @dev Encapsulates updating trust to CLAIMED and releasing the assets to
      * Beneficiary. This is true only if checkInDeadline has expired.
-     * @param _trustIndex is the index of the trust that will be updated.
+     * @param _id is the index of the trust that will be updated.
      */
-    function claimTrust(uint256 _trustIndex)
+    function claimTrust(uint256 _id)
         public
         payable
         isBeneficiary
-        trustIsPending(_trustIndex)
-        trustBelongs(_trustIndex, _beneficiaryTrusts[msg.sender])
+        trustIsPending(_id)
+        trustBelongs(_id, _beneficiaryTrusts[msg.sender])
         nonReentrant
     {
         require(
             _testators[msg.sender].checkInDeadline.isExpired(),
             "Trust can not be claimed yet."
         );
-        uint256 amount = _trusts[_trustIndex].balance;
+        uint256 amount = _trusts[_id].balance;
         _testators[msg.sender].balanceInTrusts -= amount;
 
         // update state
-        _trusts[_trustIndex].state = TrustState.CLAIMED;
+        _trusts[_id].state = TrustState.CLAIMED;
         totalBalanceTrusted -= amount;
-        _trusts[_trustIndex].balance = 0;
+        _trusts[_id].balance = 0;
 
         // send assets to beneficiary
-        address payable beneficiary = payable(_trusts[_trustIndex].beneficiary);
-        (bool sent, ) = beneficiary.call{value: amount}("");
+        address payable beneficiary = payable(_trusts[_id].beneficiary);
+        (bool sent, ) = beneficiary.call{value: _valueAfterFees(amount)}("");
         require(sent, "Transfer Failed");
 
-        emit TrustClaimed(msg.sender, _trustIndex);
+        emit TrustClaimed(msg.sender, _id);
     }
 }
