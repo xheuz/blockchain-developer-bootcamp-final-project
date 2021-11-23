@@ -1,0 +1,55 @@
+<svg version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid meet" viewBox="1604 580 150 126">
+    <!-- https://www.graphicsprings.com/logo-maker -->
+    <g data-item-type="image" data-item="Image" data-logo-item="" id="logo__item--logo_0" class="logo__item">
+        <g class="logo__item__inner" transform="translate(1609.9072678379346 573) scale(1.4571417374911446 1.4571417374911446) rotate(0 0 0)">
+
+            <g>
+                <radialGradient id="SVGID_1_" cx="50.1016" cy="32.5024" r="46.3035" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" style="stop-color:#7CC5F1"></stop>
+                    <stop offset="0.009" style="stop-color:#79C4F1"></stop>
+                    <stop offset="0.2612" style="stop-color:#22B2ED"></stop>
+                    <stop offset="0.3758" style="stop-color:#00ABEB"></stop>
+                    <stop offset="0.465" style="stop-color:#00A4E3"></stop>
+                    <stop offset="0.6054" style="stop-color:#0091CC"></stop>
+                    <stop offset="0.7795" style="stop-color:#0072A7"></stop>
+                    <stop offset="0.9788" style="stop-color:#004775"></stop>
+                    <stop offset="1" style="stop-color:#00426F"></stop>
+                </radialGradient>
+                <linearGradient id="logo__item--logo_0__0" gradientUnits="objectBoundingBox" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <stop offset="0" style="stop-color:#333333"></stop>
+                    <stop offset="1" style="stop-color:#00AB55"></stop>
+                </linearGradient>
+                <path fill="url(#logo__item--logo_0__0)" d="M67.764,39.413L49.93,29.009L31.55,40.431v19.703l17.888,10.341l18.364-10.822L67.764,39.413z    M54.858,47.459c-0.754,0.75-1.896,0.964-2.834,1.446c0.102,1.394,1.339,15.505,1.366,15.912c-2.593,0-5.186,0-7.784,0   c0.488-5.39,0.97-10.769,1.479-16.147c-0.648-0.439-1.318-0.836-1.923-1.339c-2.212-1.832-2.839-5.24-1.388-7.586   c0.884-1.426,2.314-2.657,3.933-3.14c1.237-0.375,2.631-0.386,3.895-0.085c2.245,0.514,4.142,2.411,4.789,4.811   C56.996,43.56,56.358,45.991,54.858,47.459z" data-part-id="logo__item--logo_0__0"></path>
+                <radialGradient id="SVGID_2_" cx="78.0146" cy="71.2812" r="37.7584" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" style="stop-color:#7CC5F1"></stop>
+                    <stop offset="0.009" style="stop-color:#79C4F1"></stop>
+                    <stop offset="0.2612" style="stop-color:#22B2ED"></stop>
+                    <stop offset="0.3758" style="stop-color:#00ABEB"></stop>
+                    <stop offset="0.465" style="stop-color:#00A4E3"></stop>
+                    <stop offset="0.6054" style="stop-color:#0091CC"></stop>
+                    <stop offset="0.7795" style="stop-color:#0072A7"></stop>
+                    <stop offset="0.9788" style="stop-color:#004775"></stop>
+                    <stop offset="1" style="stop-color:#00426F"></stop>
+                </radialGradient>
+                <linearGradient id="logo__item--logo_0__1" gradientUnits="objectBoundingBox" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <stop offset="0" style="stop-color:#00AB55"></stop>
+                    <stop offset="1" style="stop-color:#007B55"></stop>
+                </linearGradient>
+                <polygon fill="url(#logo__item--logo_0__1)" points="85.6,38.042 74.177,45.305 74.177,64.024 48.96,77.557 48.944,90.5 85.6,70.367" data-part-id="logo__item--logo_0__1"></polygon>
+                <radialGradient id="SVGID_3_" cx="30.6201" cy="29.8804" r="52.2247" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" style="stop-color:#919395"></stop>
+                    <stop offset="0.6727" style="stop-color:#424243"></stop>
+                    <stop offset="1" style="stop-color:#272525"></stop>
+                </radialGradient>
+                <linearGradient id="logo__item--logo_0__2" gradientUnits="objectBoundingBox" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <stop offset="0" style="stop-color:#007B55"></stop>
+                    <stop offset="1" style="stop-color:#5BE584"></stop>
+                </linearGradient>
+                <path fill="url(#logo__item--logo_0__2)" d="M25.378,36.262c1.179-0.943,17.631-10.768,24.675-14.635c0.333,0.149,16.571,9.439,24.184,13.896   c3.792-2.433,7.734-4.65,11.362-7.318C77.311,23.556,49.743,8.147,49.743,8.147s-28.195,15.14-37.71,21.033   c0,0-0.123,37.576,0,39.782c2.941,2.165,6.167,3.911,9.327,5.732C30.59,79.892,48.944,90.5,48.944,90.5l0.017-12.943   c0,0-15.75-9.129-23.711-13.79C25.26,62.342,25.378,38.845,25.378,36.262z" data-part-id="logo__item--logo_0__2"></path>
+            </g>
+
+        </g>
+    </g>
+</svg>
