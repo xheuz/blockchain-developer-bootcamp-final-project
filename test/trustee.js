@@ -8,6 +8,8 @@ const Trustee = artifacts.require("Trustee");
  */
 contract("Trustee", function (accounts) {
   const [owner, testator1, testator2, beneficiary1, beneficiary2] = accounts;
+  const addressZero = "0x0000000000000000000000000000000000000000";
+  const amount = web3.utils.toWei("0.01", "ether");
 
   beforeEach(async () => {
     instance = await Trustee.new();
@@ -23,8 +25,6 @@ contract("Trustee", function (accounts) {
   });
 
   it("should allow to create a trust with balance.", async () => {
-    // amount to be deposited at creating time
-    const amount = web3.utils.toWei("0.01", "ether");
     // create a trust and deposit amount
     await instance.createTrust(beneficiary1, amount, {
       from: testator1,
@@ -44,8 +44,6 @@ contract("Trustee", function (accounts) {
   });
 
   it("should revert transaction when not enough balance to create trust.", async () => {
-    // amount to be deposited at creating time
-    const amount = web3.utils.toWei("0.01", "ether");
     const value = web3.utils.toWei("0.001", "ether");
     // should revert
     await catchRevert(
@@ -58,8 +56,6 @@ contract("Trustee", function (accounts) {
   });
 
   it("should log when a trust was created.", async () => {
-    // amount to be deposited at creating time
-    const amount = web3.utils.toWei("0.01", "ether");
     const anotherAmount = web3.utils.toWei("2", "ether");
     // create a trust and deposit amount
     const tx = await instance.createTrust(beneficiary1, amount, {
@@ -83,8 +79,6 @@ contract("Trustee", function (accounts) {
   });
 
   it("should increase global counters when a trust is created.", async () => {
-    // amount to be deposited at creating time
-    const amount = web3.utils.toWei("0.01", "ether");
     // create first trust
     await instance.createTrust(beneficiary1, amount, {
       from: testator1,
@@ -121,8 +115,6 @@ contract("Trustee", function (accounts) {
 
   describe("As Testator", () => {
     it("should revert when add new trust to existing an beneficiary.", async () => {
-      // amount to be deposited at creating time
-      const amount = web3.utils.toWei("0.01", "ether");
       const anotherAmount = web3.utils.toWei("2", "ether");
       // create a trust and deposit amount
       await instance.createTrust(beneficiary1, amount, {
@@ -143,7 +135,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should be able to cancel a trust and get the balance back.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -181,6 +172,7 @@ contract("Trustee", function (accounts) {
       trusts = await instance.testatorTrusts({ from: testator1 });
       // global counter balance should have been decreased
       totalBalanceTrusted = await instance.totalBalanceTrusted();
+
       // check for trust state
       assert.equal(trusts[0].state, 2, "trust state does not match.");
       // 0 = PENDING, 1 = CLAIMED, 2 = CANCELED
@@ -191,9 +183,11 @@ contract("Trustee", function (accounts) {
         testator1,
         "trust testator does not match."
       );
+      // beneficiary should be `addressZero` since a testator can only have
+      // a beneficiary once.
       assert.equal(
         trusts[0].beneficiary,
-        beneficiary1,
+        addressZero,
         "trust beneficiary does not match."
       );
       assert.equal(
@@ -208,7 +202,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should revert when is not owner of a trust and tries to cancel it.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -232,7 +225,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should only allow to cancel a trust that is pending.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -252,7 +244,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should log when a trust is canceled.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -278,7 +269,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should allow to get an array of owned trusts.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -322,7 +312,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should retrieve detailed info of caller.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -365,7 +354,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should able to do a check-in.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -385,7 +373,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should update check-in frequency.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -423,7 +410,6 @@ contract("Trustee", function (accounts) {
 
   describe("As Beneficiary", () => {
     it("should list trusts of addresses.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {
@@ -445,7 +431,6 @@ contract("Trustee", function (accounts) {
     });
 
     it("should revert claiming assets when deadline time has not expired.", async () => {
-      // amount to be deposited at creating time
       const amount = web3.utils.toWei("10", "ether");
       // create a trust
       await instance.createTrust(beneficiary1, amount, {

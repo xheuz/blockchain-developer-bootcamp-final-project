@@ -15,47 +15,47 @@ contract Trustee is Ownable, ReentrancyGuard {
     event TrustCreated(
         address indexed testator,
         address indexed beneficiary,
-        uint256 index
+        uint index
     );
 
     /**
      * @dev Emitted when `Testator` canceled a `trust`.
      */
-    event TrustCanceled(address indexed testator, uint256 index);
+    event TrustCanceled(address indexed testator, uint index);
 
     /**
      * @dev Emitted when `Beneficiary` claim a `trust`.
      */
-    event TrustClaimed(address indexed beneficiary, uint256 index);
+    event TrustClaimed(address indexed beneficiary, uint index);
 
     /**
      * @dev Emitted when `Testator` does a check-in.
      */
-    event CheckInDeadlineUpdated(address testator, uint256 timestamp);
+    event CheckInDeadlineUpdated(address testator, uint timestamp);
 
     /**
      * @dev Emitted when `Testator` updates how often it will do a check-in.
      */
-    event CheckInFrequencyUpdated(address testator, uint256 time);
+    event CheckInFrequencyUpdated(address testator, uint time);
 
     // default time in days to set check in frequency
-    uint256 public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
+    uint public constant DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS = 30 days;
 
     // counters
-    uint256 public totalTestators = 0;
-    uint256 public totalBeneficiaries = 0;
-    uint256 public totalBalanceTrusted = 0;
+    uint public totalTestators = 0;
+    uint public totalBeneficiaries = 0;
+    uint public totalBalanceTrusted = 0;
 
     // custody fee = 0.3% by default
-    uint256 private _custodyFee = 3;
+    uint private _custodyFee = 3;
     // collection of trusts
     Trust[] private _trusts;
 
     // testators addresses are mapped to the dataType that must be unique
     mapping(address => Testator) private _testators;
-    mapping(address => uint256[]) private _testatorTrusts;
+    mapping(address => uint[]) private _testatorTrusts;
     // beneficiaries can have to multiple trusts from different testators
-    mapping(address => uint256[]) private _beneficiaryTrusts;
+    mapping(address => uint[]) private _beneficiaryTrusts;
 
     // trust statusses
     enum TrustState {
@@ -66,11 +66,11 @@ contract Trustee is Ownable, ReentrancyGuard {
 
     // trust
     struct Trust {
-        uint256 id;
+        uint id;
         address testator;
         address beneficiary;
-        uint256 balance;
-        uint256 timestamp;
+        uint balance;
+        uint timestamp;
         TrustState state;
     }
 
@@ -78,9 +78,9 @@ contract Trustee is Ownable, ReentrancyGuard {
         // check-in must be done before this time
         Timers.Timestamp checkInDeadline;
         // how often a check-in is needed
-        uint256 checkInFrequencyInDays;
+        uint checkInFrequencyInDays;
         // all beneficiaries related to testator
-        uint256 balanceInTrusts;
+        uint balanceInTrusts;
     }
 
     receive() external payable {}
@@ -105,9 +105,9 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev Throws if called by any account that is not a beneficiary of the
      * especified trust.
      */
-    modifier trustBelongs(uint256 _trustIndex, uint256[] memory array) {
+    modifier trustBelongs(uint _trustIndex, uint[] memory array) {
         bool found = false;
-        for (uint256 i = 0; i < array.length; i++) {
+        for (uint i = 0; i < array.length; i++) {
             if (array[i] == _trustIndex) {
                 found = true;
                 break;
@@ -117,7 +117,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier trustIsPending(uint256 _trustIndex) {
+    modifier trustIsPending(uint _trustIndex) {
         require(
             _trusts[_trustIndex].state == TrustState.PENDING,
             "Trust is already disabled."
@@ -141,8 +141,8 @@ contract Trustee is Ownable, ReentrancyGuard {
      */
     modifier isUnique(address _beneficiary) {
         bool found = false;
-        for (uint256 i = 0; i < _testatorTrusts[msg.sender].length; i++) {
-            uint256 _trustIndex = _testatorTrusts[msg.sender][i];
+        for (uint i = 0; i < _testatorTrusts[msg.sender].length; i++) {
+            uint _trustIndex = _testatorTrusts[msg.sender][i];
             if (_trusts[_trustIndex].beneficiary == _beneficiary) {
                 found = true;
                 break;
@@ -155,7 +155,7 @@ contract Trustee is Ownable, ReentrancyGuard {
     /** Helper Functions
      */
 
-    function _daysToSeconds(uint256 _days) internal pure returns (uint256) {
+    function _daysToSeconds(uint _days) internal pure returns (uint) {
         // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
         return _days * (24 * 60 * 60);
     }
@@ -164,7 +164,7 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev Sets checkInDeadline property for Testator.
      */
     function _setCheckInDeadline() internal {
-        uint256 _now = block.timestamp;
+        uint _now = block.timestamp;
         if (_testators[msg.sender].checkInFrequencyInDays <= 0) {
             _setCheckInFrequencyInDays(0);
         }
@@ -187,15 +187,15 @@ contract Trustee is Ownable, ReentrancyGuard {
     function _valueAfterFees(uint _amount) internal view returns (uint) {
         // 1000 constant value used to calculate custody percentage to be
         // retained.
-        return _amount - (_amount * _custodyFee / 1000);
+        return _amount - ((_amount * _custodyFee) / 1000);
     }
 
     /**
      * @dev Sets default check-in frequency for Testator.
      * @param _days amount of days required before trust become claimable
      */
-    function _setCheckInFrequencyInDays(uint256 _days) internal {
-        uint256 newFrequency = _days == 0
+    function _setCheckInFrequencyInDays(uint _days) internal {
+        uint newFrequency = _days == 0
             ? DEFAULT_CHECK_IN_FREQUENCY_IN_DAYS
             : _daysToSeconds(_days);
 
@@ -223,18 +223,18 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @notice Adds a beneficiary with it's Trust if it doesn't have one
      * @dev Turns the caller into a Testator by creating a Trust and relating
      * @dev the beneficiary with the Trust. Also asociates the Beneficiary with
-     * @dev it's Testator. Updates lastCheckIn and initialize checkInFrequencyInDays
+     * @dev it's Testator. Updates deadline and initialize checkInFrequencyInDays
      * @dev property of the Testator if nothing is configured.
      * @param _beneficiary is the address that will received the trust assets.
      */
-    function createTrust(address _beneficiary, uint256 amount)
+    function createTrust(address _beneficiary, uint amount)
         public
         payable
         isUnique(_beneficiary)
     {
         require(msg.value >= amount, "Not enough balance.");
         // id will always be the length of trusts array
-        uint256 trustIndex = _trusts.length;
+        uint trustIndex = _trusts.length;
 
         // add trust to array
         _trusts.push(
@@ -242,7 +242,7 @@ contract Trustee is Ownable, ReentrancyGuard {
                 trustIndex,
                 msg.sender,
                 _beneficiary,
-                amount,
+                msg.value,
                 block.timestamp,
                 TrustState.PENDING
             )
@@ -268,30 +268,45 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @notice Set Trust state to CANCELED.
      * @dev Encapsulates updating trust to CANCELED and releasing the assets to
      * @dev Testator.
-     * @param _trustIndex is the index of the trust that will be updated.
+     * @param _id is the index of the trust that will be updated.
      */
-    function cancelTrust(uint256 _trustIndex)
+    function cancelTrust(uint _id)
         public
         payable
         isTestator
-        trustIsPending(_trustIndex)
-        trustBelongs(_trustIndex, _testatorTrusts[msg.sender])
+        trustIsPending(_id)
+        trustBelongs(_id, _testatorTrusts[msg.sender])
         nonReentrant
     {
-        uint256 amount = _trusts[_trustIndex].balance;
+        uint amount = _trusts[_id].balance;
         _testators[msg.sender].balanceInTrusts -= amount;
 
         // update state
-        _trusts[_trustIndex].state = TrustState.CANCELED;
+        // remove from beneficiary
+        address beneficiary = _trusts[_id].beneficiary;
+        uint _length = _beneficiaryTrusts[beneficiary].length;
+        for (uint i = 0; i < _length; i++) {
+            if (_beneficiaryTrusts[beneficiary][i] == _id) {
+                _beneficiaryTrusts[beneficiary][i] = _beneficiaryTrusts[
+                    beneficiary
+                ][_length - 1];
+                _beneficiaryTrusts[beneficiary].pop();
+                break;
+            }
+        }
+
+        // update trust state
+        _trusts[_id].beneficiary = address(0);
+        _trusts[_id].state = TrustState.CANCELED;
         totalBalanceTrusted -= amount;
-        _trusts[_trustIndex].balance = 0;
+        _trusts[_id].balance = 0;
         _setCheckInDeadline();
 
         // send assets to testator
         (bool sent, ) = msg.sender.call{value: amount}("");
         require(sent, "Transfer Failed");
 
-        emit TrustCanceled(msg.sender, _trustIndex);
+        emit TrustCanceled(msg.sender, _id);
     }
 
     /**
@@ -306,7 +321,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         returns (Trust[] memory)
     {
         Trust[] memory trusts = new Trust[](_testatorTrusts[msg.sender].length);
-        for (uint256 i = 0; i < _testatorTrusts[msg.sender].length; i++) {
+        for (uint i = 0; i < _testatorTrusts[msg.sender].length; i++) {
             trusts[i] = (_trusts[_testatorTrusts[msg.sender][i]]);
         }
         return trusts;
@@ -343,7 +358,7 @@ contract Trustee is Ownable, ReentrancyGuard {
      * @dev Days needs to be converted to seconds in order to do calculations.
      * @param _days amount of days required to do a check-in.
      */
-    function setCheckInFrequencyInDays(uint256 _days) external isTestator {
+    function setCheckInFrequencyInDays(uint _days) external isTestator {
         require(_days >= 30, "At least 30 days are require between check-ins.");
         _setCheckInFrequencyInDays(_days);
         _setCheckInDeadline();
@@ -367,7 +382,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         Trust[] memory trusts = new Trust[](
             _beneficiaryTrusts[msg.sender].length
         );
-        for (uint256 i = 0; i < _beneficiaryTrusts[msg.sender].length; i++) {
+        for (uint i = 0; i < _beneficiaryTrusts[msg.sender].length; i++) {
             trusts[i] = (_trusts[_beneficiaryTrusts[msg.sender][i]]);
         }
         return trusts;
@@ -379,7 +394,7 @@ contract Trustee is Ownable, ReentrancyGuard {
      * Beneficiary. This is true only if checkInDeadline has expired.
      * @param _id is the index of the trust that will be updated.
      */
-    function claimTrust(uint256 _id)
+    function claimTrust(uint _id)
         public
         payable
         isBeneficiary
@@ -391,7 +406,7 @@ contract Trustee is Ownable, ReentrancyGuard {
             _testators[msg.sender].checkInDeadline.isExpired(),
             "Trust can not be claimed yet."
         );
-        uint256 amount = _trusts[_id].balance;
+        uint amount = _trusts[_id].balance;
         _testators[msg.sender].balanceInTrusts -= amount;
 
         // update state
