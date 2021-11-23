@@ -158,11 +158,6 @@ contract Trustee is Ownable, ReentrancyGuard {
         return _days * (24 * 60 * 60);
     }
 
-    function _secondsToDays(uint256 _seconds) internal pure returns (uint256) {
-        // 24 hours in a day * 60 minutes in an hour * 60 seconds in a minute
-        return _seconds / (24 * 60 * 60);
-    }
-
     /**
      * @dev Sets checkInDeadline property for Testator.
      */
@@ -176,7 +171,10 @@ contract Trustee is Ownable, ReentrancyGuard {
             uint64(_now + _testators[msg.sender].checkInFrequencyInDays)
         );
 
-        emit CheckInDeadlineUpdated(msg.sender, _now);
+        emit CheckInDeadlineUpdated(
+            msg.sender,
+            _testators[msg.sender].checkInDeadline.getDeadline()
+        );
     }
 
     /**
@@ -230,7 +228,7 @@ contract Trustee is Ownable, ReentrancyGuard {
 
         // update testator properties
         if (_testatorTrusts[msg.sender].length == 0) totalTestators++;
-        _testators[msg.sender].balanceInTrusts = msg.value;
+        _testators[msg.sender].balanceInTrusts += msg.value;
         _testatorTrusts[msg.sender].push(trustIndex);
         _setCheckInDeadline();
 
@@ -256,6 +254,7 @@ contract Trustee is Ownable, ReentrancyGuard {
         nonReentrant
     {
         uint256 amount = _trusts[_trustIndex].balance;
+        _testators[msg.sender].balanceInTrusts -= amount;
 
         // update state
         _trusts[_trustIndex].state = TrustState.CANCELED;
@@ -368,6 +367,7 @@ contract Trustee is Ownable, ReentrancyGuard {
             "Trust can not be claimed yet."
         );
         uint256 amount = _trusts[_trustIndex].balance;
+        _testators[msg.sender].balanceInTrusts -= amount;
 
         // update state
         _trusts[_trustIndex].state = TrustState.CLAIMED;
