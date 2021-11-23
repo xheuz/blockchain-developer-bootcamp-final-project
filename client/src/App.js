@@ -8,14 +8,13 @@ import Beneficiaries from "./pages/Beneficiaries";
 import Landing from "./pages/Landing";
 
 import { useAppContext, useEventOnLoad } from "./state/hooks";
+import {useContractGlobals} from "./hooks/useTrustee";
 
 function App() {
   useEventOnLoad();
-  const { web3, contract, isConnected, showPage, chainId, currentAccount } = useAppContext();
-  // console.log(web3, contract,chainId, currentAccount);
+  useContractGlobals();
+  const { isConnected, showPage } = useAppContext();
 
-  // if (!state.web3)
-  //   return <div>Loading Web3, accounts, and contract...</div>;
   return (
     <>
       <TopBar />

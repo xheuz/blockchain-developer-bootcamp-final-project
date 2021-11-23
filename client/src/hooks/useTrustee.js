@@ -1,16 +1,42 @@
 import { useEffect } from "react";
+
 import { useAppContext } from "../state/hooks";
 import { useWeb3 } from "../hooks/useWeb3";
 
-export function useBeneficiary() {
-  const { contract, currentAccount, setTrusts } = useAppContext();
+export function useContractGlobals() {
+  const { contract } = useWeb3();
+  const { setTotalTestators, setTotalBeneficiaries, setTotalBalanceTrusted } =
+    useAppContext();
 
-  const fetchTrusts = async () => {
-    setTrusts(await contract.methods.claim().call({ from: currentAccount }));
+  const fetchContractGlobals = async () => {
+    try {
+      setTotalTestators(await contract.methods.totalTestators());
+      setTotalBeneficiaries(await contract.methods.totalBeneficiaries());
+      setTotalBalanceTrusted(await contract.methods.totalBalanceTrusted());
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const claimTrust = async (address) => {
-    await contract.methods.claim(address).call({ from: currentAccount });
+  useEffect(() => {
+    if (contract) fetchContractGlobals();
+  }, [contract]);
+}
+
+export function useBeneficiary() {
+  const { fetchBalance } = useWeb3();
+  const { contract, currentAccount, setBalance, setBeneficiaries } =
+    useAppContext();
+
+  const fetchTrusts = async () => {
+    setBeneficiaries(
+      await contract.methods.beneficiaryTrusts().call({ from: currentAccount })
+    );
+  };
+
+  const claimTrust = async (trustId) => {
+    await contract.methods.claimTrust(trustId).call({ from: currentAccount });
+    await fetchBalance(currentAccount, setBalance);
   };
 
   return {
@@ -26,9 +52,10 @@ export function useTestator() {
     balance,
     contract,
     currentAccount,
+    setBalance,
     setLastCheckIn,
     setCheckInFrequencyInDays,
-    setBeneficiaries,
+    setTrusts,
     setTrustBalance,
   } = useAppContext();
 
@@ -58,71 +85,50 @@ export function useTestator() {
       .call({ from: currentAccount });
   };
 
-  const createBeneficiary = async (address) => {
-    try {
-      await contract.methods
-        .addBeneficiary(address)
-        .send({ from: currentAccount });
-    } catch (error) {}
-  };
-
-  const fetchBeneficiaries = async () => {
-    try {
-      let beneficiaries = await contract.methods
-        .getBeneficiaries()
-        .call({ from: currentAccount });
-
-      const options = {
-        filter: {
-          testator: currentAccount,
-          beneficiary: beneficiaries,
-        },
-        fromBlock: 0,
-        toBlock: "latest",
-      };
-
-      const eventsCallback = (error, events) => {
-        if (error) console.error(error);
-
-        setBeneficiaries(
-          events.map((event) => {
-            const { beneficiary: address, trustAddress } = event.returnValues;
-
-            return {
-              name: "John Doe",
-              address,
-              trustAddress,
-            };
-          })
-        );
-      };
-
-      // get trust address per beneficiary
-      contract.getPastEvents("BeneficiaryAdded", options, eventsCallback);
-    } catch (err) {
-      setBeneficiaries([]);
+  const createTrust = async (address, amount) => {
+    if (balance > amount && amount > 0) {
+      try {
+        // create a trust
+        await contract.methods.createTrust(address, amount).send({
+          from: currentAccount,
+          value: web3.utils.toWei(amount, "ether"),
+        });
+        // fetch balance
+        await fetchBalance(currentAccount, setBalance);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      console.error("Not enough balance.");
     }
   };
 
-  const deleteBeneficiary = async (address) => {
+  const cancelTrust = async (_id) => {
     try {
-      await contract.methods
-        .removeBeneficiary(address)
-        .send({ from: currentAccount });
+      await contract.methods.cancelTrust(_id).send({ from: currentAccount });
+      await fetchBalance(currentAccount, setBalance);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const depositEth = async (address, amount) => {
-    if (balance > amount && amount > 0) {
-      console.log(balance, amount);
-      await contract.methods.deposit(address).send({
-        from: currentAccount,
-        value: web3.utils.toWei(amount, "ether"),
-      });
-    } else {
-      console.error("Not enough balance.");
+  const fetchTrusts = async () => {
+    try {
+      setTrusts(
+        await contract.methods.testatorTrusts().call({ from: currentAccount })
+      );
+    } catch (err) {
+      setTrusts([]);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      setProfile(
+        await contract.methods.testatorDetails().call({ from: currentAccount })
+      );
+    } catch (err) {
+      setProfile({});
     }
   };
 
@@ -130,15 +136,13 @@ export function useTestator() {
     await fetchBalance(address, setTrustBalance);
 
   return {
-    fetchLastCheckIn,
-    fetchCheckInFrequencyInDays,
     updateLastCheckIn,
     updateCheckInFrequencyInDays,
-    createBeneficiary,
-    fetchBeneficiaries,
-    deleteBeneficiary,
+    createTrust,
+    cancelTrust,
+    fetchTrusts,
     fetchTrustBalance,
-    depositEth,
+    fetchProfile,
   };
 }
 

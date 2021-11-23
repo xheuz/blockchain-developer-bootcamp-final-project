@@ -7,10 +7,12 @@ const reducer = (state, { type, payload }) => {
       return { ...state, chainId: payload };
     case "SET_CONTRACT":
       return { ...state, contract: payload };
-    case "SET_TESTATORS_COUNT":
-      return { ...state, testatorsCount: payload };
-    case "SET_BENEFICIARIES_COUNT":
-      return { ...state, beneficiariesCount: payload };
+    case "SET_TOTAL_TESTATORS":
+      return { ...state, totalTestators: payload };
+    case "SET_TOTAL_BENEFICIARIES":
+      return { ...state, totalBeneficiaries: payload };
+    case "SET_TOTAL_BALANCE_TRUSTED":
+      return { ...state, totalBalanceTrusted: payload };
 
     /** UI */
     case "SET_SHOW_PAGE":
@@ -30,47 +32,29 @@ const reducer = (state, { type, payload }) => {
     case "SET_BALANCE":
       return { ...state, balance: payload };
 
-    /** Features */
+    /** Testator */
     case "SET_LAST_CHECK_IN":
       return { ...state, lastCheckIn: payload };
     case "SET_CHECK_IN_FREQUENCY_IN_DAYS":
-      return {...state, checkInFrequencyInDays: payload};
-
-    // "BeneficiaryAdded"
-    // "BeneficiaryRemoved"
-    // "BeneficiaryChanged"
-    // "LastCheckInUpdated"
-    // "CheckInFrequencyUpdated"
-    // "Deposited"
-    // "TrustClaimed"
+      return { ...state, checkInFrequencyInDays: payload };
+    case "SET_BALANCE_IN_TRUSTS":
+      return { ...state, setBalanceInTrusts: payload };
+    case "SET_TRUSTS":
+      return { ...state, setTrusts: payload };
+    case "SET_SELECTED_TRUST":
+      return { ...state, setSelectedTrust: payload };
 
     /** Beneficiary */
-    case "ADD_BENEFICIARY":
-      // check if the address already exist, only update if it does not exist.
-      let beneficiaries = state.beneficiaries.find(
-        (b) => b.address === payload.address
-      )
-        ? state.beneficiaries
-        : [...state.beneficiaries, payload];
-      return { ...state, beneficiaries };
-    case "REMOVE_BENEFICIARY":
-      return {
-        ...state,
-        beneficiaries: state.beneficiaries.filter(
-          (b) => b.address !== payload.address
-        ),
-      };
-    case "SET_BENEFICIARIES":
-      return { ...state, beneficiaries: [...payload] };
-    case "SET_SELECTED_BENEFICIARY":
-      return { ...state, selectedBeneficiary: payload };
-    case "SET_TRUST_BALANCE":
-      return { ...state, trustBalance: payload };
+    case "SET_BENEFICIARY_TRUSTS":
+      return { ...state, setBeneficiaryTrusts: payload };
+    case "SET_SELECTED_BENEFICIARY_TRUST":
+      return { ...state, setBeneficiaryTrusts: payload };
 
     /** Dependencies */
     case "SET_WEB3":
       return { ...state, web3: payload };
-    default:
+    
+      default:
       return state;
   }
 };

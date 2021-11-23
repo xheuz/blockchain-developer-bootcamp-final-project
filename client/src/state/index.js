@@ -10,10 +10,12 @@ export const initialState = {
   setChainId: () => {},
   contract: null,
   setContract: () => {},
-  testatorsCount: 0,
-  setTestatorsCount: () => {},
-  beneficiariesCount: 0,
-  setBeneficiariesCount: () => {},
+  totalTestators: 0,
+  setTotalTestators: () => {},
+  totalBeneficiaries: 0,
+  setTotalBeneficiaries: () => {},
+  totalBalanceTrusted: 0,
+  setTotalBalanceTrusted: () => {},
 
   // ui
   showPage: "fab",
@@ -34,22 +36,22 @@ export const initialState = {
   setBalance: () => {},
 
   // testator
-  lastCheckIn: null,
-  setLastCheckIn: () => {},
+  checkInDeadline: null,
+  setCheckInDeadline: () => {},
   checkInFrequencyInDays: null,
   setCheckInFrequencyInDays: () => {},
-  beneficiaries: [],
-  setBeneficiaries: () => {},
-  addBeneficiary: () => {},
-  removeBeneficiary: () => {},
-  selectedBeneficiary: null,
-  setSelectedBeneficiary: () => {},
-  trustBalance: 0,
-  setTrustBalance: () => {},
-
-  // beneficiary
+  balanceInTrusts: 0,
+  setBalanceInTrusts: () => {},
   trusts: [],
   setTrusts: () => {},
+  selectedTrust: {},
+  setSelectedTrust: () => {},
+
+  // beneficiary
+  beneficiaryTrusts: [],
+  setBeneficiaryTrusts: () => {},
+  selectedBeneficiaryTrust: [],
+  setSelectedBeneficiaryTrust: () => {},
 
   // dependencies
   web3: null,
@@ -73,11 +75,14 @@ export default function AppContextProvider({ children }) {
     setContract: (instance) => {
       dispatch({ type: "SET_CONTRACT", payload: instance });
     },
-    setTestatorsCount: (count) => {
-      dispatch({ type: "SET_TESTATORS_COUNT", payload: count });
+    setTotalTestators: (count) => {
+      dispatch({ type: "SET_TOTAL_TESTATORS", payload: count });
     },
-    setBeneficiariesCount: (count) => {
-      dispatch({ type: "SET_BENEFICIARIES_COUNT", payload: count });
+    setTotalBeneficiaries: (count) => {
+      dispatch({ type: "SET_TOTAL_BENEFICIARIES", payload: count });
+    },
+    setTotalBalanceTrusted: (count) => {
+      dispatch({ type: "SET_TOTAL_BALANCE_TRUSTED", payload: count });
     },
 
     // ui
