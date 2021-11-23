@@ -110,29 +110,32 @@ export default function AppContextProvider({ children }) {
       dispatch({ type: "SET_BALANCE", payload: balance });
     },
 
-    // features
-    setLastCheckIn: (timestamp) => {
-      dispatch({ type: "SET_LAST_CHECK_IN", payload: timestamp });
+    // testator
+    setCheckInDeadline: (timestamp) => {
+      dispatch({ type: "SET_CHECK_IN_DEADLINE", payload: timestamp });
     },
     setCheckInFrequencyInDays: (days) => {
       dispatch({ type: "SET_CHECK_IN_FREQUENCY_IN_DAYS", payload: days });
     },
+    setBalanceInTrusts: (amount) => {
+      dispatch({ type: "SET_BALANCE_IN_TRUSTS", payload: amount });
+    },
+    setTrusts: (trusts) => {
+      dispatch({ type: "SET_TRUSTS", payload: [...trusts] });
+    },
+    setSelectedTrust: (trust) => {
+      dispatch({ type: "SET_SELECTED_TRUST", payload: { ...trust } });
+    },
 
-    // beneficiaries
-    setBeneficiaries: (beneficiaries) => {
-      dispatch({ type: "SET_BENEFICIARIES", payload: [...beneficiaries] });
+    // beneficiary
+    setBeneficiaryTrusts: (trusts) => {
+      dispatch({ type: "SET_BENEFICIARY_TRUSTS", payload: [...trusts] });
     },
-    addBeneficiary: (beneficiary) => {
-      dispatch({ type: "ADD_BENEFICIARY", payload: beneficiary });
-    },
-    removeBeneficiary: (beneficiary) => {
-      dispatch({ type: "REMOVE_BENEFICIARY", payload: beneficiary });
-    },
-    setSelectedBeneficiary: (beneficiary) => {
-      dispatch({ type: "SET_SELECTED_BENEFICIARY", payload: beneficiary });
-    },
-    setTrustBalance: (count) => {
-      dispatch({ type: "SET_TRUST_BALANCE", payload: count });
+    setSelectedBeneficiaryTrust: (trust) => {
+      dispatch({
+        type: "SET_SELECTED_BENEFICIARY_TRUST",
+        payload: { ...trust },
+      });
     },
 
     // dependencies

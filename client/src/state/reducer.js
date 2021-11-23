@@ -33,8 +33,8 @@ const reducer = (state, { type, payload }) => {
       return { ...state, balance: payload };
 
     /** Testator */
-    case "SET_LAST_CHECK_IN":
-      return { ...state, lastCheckIn: payload };
+    case "SET_CHECK_IN_DEADLINE":
+      return { ...state, checkInDeadline: payload };
     case "SET_CHECK_IN_FREQUENCY_IN_DAYS":
       return { ...state, checkInFrequencyInDays: payload };
     case "SET_BALANCE_IN_TRUSTS":
