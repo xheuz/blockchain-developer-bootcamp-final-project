@@ -157,10 +157,10 @@ truffle test
 truffle console --network develop
 ```
 
-3. Apply migrations
+3. Once inside truffle console `truffle(develop)>` apply migrations
 
 ```bash
-truffle(develop)> migrate
+migrate
 ```
 
 4. Go to client directory
