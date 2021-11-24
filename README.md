@@ -163,7 +163,7 @@ truffle console --network develop
 migrate
 ```
 
-4. Go to client directory
+4. In another terminal and from the root of the project, go to client directory
 
 ```bash
 cd client
