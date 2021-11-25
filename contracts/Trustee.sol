@@ -45,9 +45,9 @@ contract Trustee is Ownable, ReentrancyGuard {
     uint public totalTestators = 0;
     uint public totalBeneficiaries = 0;
     uint public totalBalanceTrusted = 0;
-
     // custody fee = 0.3% by default
-    uint private _custodyFee = 3;
+    uint public custodyFee = 3;
+
     // collection of trusts
     Trust[] private _trusts;
 
@@ -189,7 +189,7 @@ contract Trustee is Ownable, ReentrancyGuard {
     function _valueAfterFees(uint _amount) internal view returns (uint) {
         // 1000 constant value used to calculate custody percentage to be
         // retained.
-        return _amount - ((_amount * _custodyFee) / 1000);
+        return _amount - ((_amount * custodyFee) / 1000);
     }
 
     /**
@@ -214,12 +214,11 @@ contract Trustee is Ownable, ReentrancyGuard {
      * 0.3% per example which is equals to 3/1000. See _valueAfterFees function.
      * @param _fee amount to be retained.
      */
-    function setCreationFee(uint _fee) public payable onlyOwner {
-        _custodyFee = _fee;
+    function setCustodyFee(uint _fee) public onlyOwner {
+        custodyFee = _fee;
     }
 
-    /** Testator Functions
-     */
+    /** Testator Functions */
 
     /**
      * @notice Adds a beneficiary with it's Trust if it doesn't have one
@@ -274,7 +273,6 @@ contract Trustee is Ownable, ReentrancyGuard {
      */
     function cancelTrust(uint _id)
         public
-        payable
         isTestator
         trustIsPending(_id)
         trustBelongs(_id, _testatorTrusts[msg.sender])
@@ -398,7 +396,6 @@ contract Trustee is Ownable, ReentrancyGuard {
      */
     function claimTrust(uint _id)
         public
-        payable
         isBeneficiary
         trustIsPending(_id)
         trustBelongs(_id, _beneficiaryTrusts[msg.sender])

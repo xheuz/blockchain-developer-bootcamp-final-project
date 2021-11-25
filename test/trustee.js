@@ -113,6 +113,20 @@ contract("Trustee", function (accounts) {
     );
   });
 
+  describe("As Owner", () => {
+    it("should set a custody fee.", async () => {
+      // get default fee
+      const defaultFee = await instance.custodyFee();
+
+      // set new fee to 20
+      await instance.setCustodyFee(20, { from: owner });
+      const currentFee = await instance.custodyFee();
+
+      assert.equal(defaultFee, 3, "defaultFee is not 3.");
+      assert.equal(currentFee, 20, "currentFee is not 20.");
+    });
+  });
+
   describe("As Testator", () => {
     it("should revert when add new trust to existing an beneficiary.", async () => {
       const anotherAmount = web3.utils.toWei("2", "ether");
