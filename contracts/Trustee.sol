@@ -189,7 +189,7 @@ contract Trustee is Ownable, ReentrancyGuard {
     function _valueAfterFees(uint _amount) internal view returns (uint) {
         // 1000 constant value used to calculate custody percentage to be
         // retained.
-        return _amount - ((_amount * custodyFee) / 1000);
+        return _amount - (_amount * custodyFee / 1000);
     }
 
     /**
