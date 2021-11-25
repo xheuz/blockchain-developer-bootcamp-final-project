@@ -113,6 +113,10 @@ contract("Trustee", function (accounts) {
     );
   });
 
+  it("should revert when not owner set a custody fee.", async () => {
+    await catchRevert(instance.setCustodyFee(20, { from: testator1 }));
+  });
+
   describe("As Owner", () => {
     it("should set a custody fee.", async () => {
       // get default fee
