@@ -12,6 +12,9 @@ import Tab from "@mui/material/Tab";
 import TrustAddForm from "./TrustAddForm";
 import TrustItem from "./TrustItem";
 
+import { useAppContext } from "../../state/hooks";
+import { useBeneficiary, useTestator } from "../../hooks/useTrustee";
+
 const StyledTabs = styled((props) => (
   <Tabs
     {...props}
@@ -37,7 +40,7 @@ const StyledTab = styled((props) => <Tab disableRipple {...props} />)(
     fontSize: theme.typography.pxToRem(20),
     marginRight: theme.spacing(5),
     padding: theme.spacing(4),
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
     "&.Mui-selected": {
       color: "#FFF",
     },
@@ -45,8 +48,8 @@ const StyledTab = styled((props) => <Tab disableRipple {...props} />)(
       backgroundColor: "rgba(100, 95, 228, 0.32)",
     },
     "&.MuiButtonBase-root": {
-      height: "10px"
-    }
+      height: "10px",
+    },
   })
 );
 
@@ -70,7 +73,7 @@ function TabPanel(props) {
   );
 }
 
-function TrustList({ trusts, action, isTestator, createTrust }) {
+function TrustList({ trusts, action, isTestator }) {
   return (
     <Grid container spacing={2}>
       {trusts.map((t, indx) => (
@@ -80,27 +83,20 @@ function TrustList({ trusts, action, isTestator, createTrust }) {
       ))}
       {isTestator ? (
         <Grid item xs={12} sm={6} key={"add"}>
-          <TrustAddForm
-            createTrust={createTrust}
-            triggerButton={<TrustItem addNew={true} />}
-          />
+          <TrustAddForm triggerButton={<TrustItem addNew={true} />} />
         </Grid>
       ) : null}
     </Grid>
   );
 }
 
-export default function TrustsDetailsCard({
-  trusts,
-  beneficiaryTrusts,
-  createTrust,
-  cancelTrust,
-  claimTrust,
-}) {
-  const [value, setValue] = React.useState(0);
+export default function TrustsLists() {
+  const { trusts, beneficiaryTrusts, showTab, setShowTab } = useAppContext();
+  const { cancelTrust } = useTestator();
+  const { claimTrust } = useBeneficiary();
 
   const handleChange = (event, newValue) => {
-    setValue(newValue);
+    setShowTab(newValue);
   };
 
   function a11yProps(index) {
@@ -112,7 +108,11 @@ export default function TrustsDetailsCard({
 
   return (
     <>
-      <StyledTabs value={value} onChange={handleChange} sx={{marginBottom: 2}}>
+      <StyledTabs
+        value={showTab}
+        onChange={handleChange}
+        sx={{ marginBottom: 2 }}
+      >
         <StyledTab
           label="Trusts"
           {...a11yProps(0)}
@@ -137,10 +137,10 @@ export default function TrustsDetailsCard({
       </StyledTabs>
       <div>
         <div>
-          <TabPanel value={value} index={0}>
-            <TrustList trusts={trusts} action={cancelTrust} createTrust={createTrust} isTestator={true} />
+          <TabPanel value={showTab} index={0}>
+            <TrustList trusts={trusts} action={cancelTrust} isTestator={true} />
           </TabPanel>
-          <TabPanel value={value} index={1}>
+          <TabPanel value={showTab} index={1}>
             <TrustList trusts={beneficiaryTrusts} action={claimTrust} />
           </TabPanel>
         </div>

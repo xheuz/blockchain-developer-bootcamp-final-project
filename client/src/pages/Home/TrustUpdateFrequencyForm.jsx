@@ -8,40 +8,41 @@ import DialogTitle from "@mui/material/DialogTitle";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 
 import { useAppContext } from "../../state/hooks";
 import { useTestator } from "../../hooks/useTrustee";
 
-export default function TrustAddForm({ triggerButton }) {
-  const [trust, setTrust] = React.useState({ address: "", amount: 0 });
-  const { createTrust } = useTestator();
+export default function TrustUpdateFrequencyForm({ triggerButton }) {
+  const [frequency, setFrequency] = React.useState({ days: 30 });
+  const { updateCheckInFrequencyInDays } = useTestator();
   const {
-    showAddTrustForm,
-    setShowAddTrustForm,
+    showUpdateTrustForm,
+    setShowUpdateTrustForm,
+    checkInFrequencyInDays,
     isButtonDisabled,
     setIsButtonDisabled,
-    custodyFee,
   } = useAppContext();
 
   const handleOnChange = (event) => {
-    setTrust({
-      ...trust,
+    setFrequency({
+      ...frequency,
       [event.target.name]: event.target.value,
     });
   };
 
   const handleClickOpen = () => {
-    setShowAddTrustForm(true);
+    setShowUpdateTrustForm(true);
   };
 
   const handleClose = () => {
-    setShowAddTrustForm(false);
+    setShowUpdateTrustForm(false);
   };
 
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     setIsButtonDisabled(true);
-    await createTrust(trust.address, trust.amount);
+    await updateCheckInFrequencyInDays(frequency.days);
     setIsButtonDisabled(false);
     handleClose();
   };
@@ -49,7 +50,7 @@ export default function TrustAddForm({ triggerButton }) {
   return (
     <div>
       <div onClick={handleClickOpen}>{triggerButton}</div>
-      <Dialog open={showAddTrustForm} onClose={handleClose}>
+      <Dialog open={showUpdateTrustForm} onClose={handleClose}>
         <DialogTitle>
           <Typography
             variant="h3"
@@ -57,7 +58,15 @@ export default function TrustAddForm({ triggerButton }) {
             sx={{ fontWeight: "bolder" }}
             textAlign="center"
           >
-            Trust
+            Check-In Frequency
+          </Typography>
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ fontWeight: "bolder" }}
+            textAlign="center"
+          >
+            currently: {checkInFrequencyInDays} days
           </Typography>
         </DialogTitle>
         <DialogContent>
@@ -68,35 +77,23 @@ export default function TrustAddForm({ triggerButton }) {
             onSubmit={(e) => e.preventDefault()}
           >
             <TextField
+              type="number"
               fullWidth
               autoFocus
               margin="dense"
-              id="address"
-              name="address"
-              label="Beneficiary Address"
-              value={trust.address}
-              onChange={handleOnChange}
-              helperText="Provide the address of the Beneficiary for ERC20 network."
-            />
-            <TextField
-              margin="dense"
-              id="amount"
-              name="amount"
-              label="Amount"
-              value={trust.amount}
+              id="days"
+              name="days"
+              label="Days"
+              value={frequency.days}
               onChange={handleOnChange}
               InputProps={{
                 endAdornment: (
-                  <InputAdornment position="end">ETH</InputAdornment>
+                  <InputAdornment position="end">
+                    <UpdateOutlinedIcon color="warning" />
+                  </InputAdornment>
                 ),
               }}
-              type="number"
-              fullWidth
-              helperText={
-                <Typography variant="caption" component="div" sx={{}}>
-                  Approximate release fee: {trust.amount * custodyFee} ETH
-                </Typography>
-              }
+              helperText="How often do you want to check-in? (minimum every 30 days)."
             />
           </Box>
         </DialogContent>
@@ -109,7 +106,7 @@ export default function TrustAddForm({ triggerButton }) {
             onClick={handleOnSubmit}
             disabled={isButtonDisabled}
           >
-            Create
+            Update
           </Button>
         </DialogActions>
       </Dialog>

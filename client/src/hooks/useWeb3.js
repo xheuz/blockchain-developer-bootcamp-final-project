@@ -2,6 +2,7 @@ import Web3 from "web3";
 
 import { DAPP_CONTRACT } from "../config";
 import { useAppContext } from "../state/hooks";
+import {numberToFixed} from "../utils/format";
 
 export function useWeb3Setup() {
   const { setWeb3 } = useAppContext();
@@ -35,6 +36,7 @@ export function useWeb3SetupContract() {
     setTotalTestators,
     setTotalBeneficiaries,
     setTotalBalanceTrusted,
+    setCustodyFee
   } = useAppContext();
 
   const useContract = async () => {
@@ -55,6 +57,7 @@ export function useWeb3SetupContract() {
     );
     setContract(contract);
 
+    setCustodyFee(await contract.methods.totalTestators().call());
     // set global counters from the contract
     setTotalTestators(await contract.methods.totalTestators().call());
     setTotalBeneficiaries(await contract.methods.totalBeneficiaries().call());
@@ -140,8 +143,11 @@ export function useWeb3() {
 
   const fetchBalance = async (address, callback) => {
     try {
-      const balance = await web3.eth.getBalance(address);
-      callback(web3.utils.fromWei(balance, "ether"));
+      const balance = web3.utils.fromWei(
+        await web3.eth.getBalance(address),
+        "ether"
+      );
+      callback(numberToFixed(balance));
     } catch (error) {}
   };
 

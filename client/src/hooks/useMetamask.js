@@ -10,7 +10,7 @@ export const useEventAccountsChanged = () => {
   const { setCurrentAccount, setIsConnected, setBalance } = useAppContext();
 
   const handleAccountChange = async (accounts) => {
-    if (!accounts.length) {
+    if (!accounts.length|| accounts.length > 1) {
       setIsConnected(false);
       return;
     }

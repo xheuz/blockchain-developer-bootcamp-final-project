@@ -9,4 +9,9 @@ export const shortenAddress = (address, num = 3) => {
 };
 
 export const secondsToDays = (seconds) => seconds / 24 / 60 / 60;
-export const timestampToDate = (timestamp) => new Date(timestamp * 1000).toDateString();
+
+export const timestampToDate = (timestamp) =>
+  new Date(timestamp * 1000).toDateString();
+
+export const numberToFixed = (number, decimals = 4) =>
+  Number(number).toFixed(decimals);

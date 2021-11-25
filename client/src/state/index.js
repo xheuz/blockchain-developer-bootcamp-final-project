@@ -16,6 +16,8 @@ export const initialState = {
   setTotalBeneficiaries: () => {},
   totalBalanceTrusted: 0,
   setTotalBalanceTrusted: () => {},
+  custodyFee: 0,
+  setCustodyFee: () => {},
 
   // ui
   notification: {
@@ -29,10 +31,12 @@ export const initialState = {
   setNotification: () => {},
   showAddTrustForm: false,
   setShowAddTrustForm: () => {},
-  showViewBeneficiaryDialog: false,
-  setShowViewBeneficiaryDialog: () => {},
+  showUpdateTrustForm: false,
+  setShowUpdateTrustForm: () => {},
   isButtonDisabled: false,
   setIsButtonDisabled: () => {},
+  showTab: 0,
+  setShowTab: () => {},
 
   // auth
   isConnected: false,
@@ -91,6 +95,9 @@ export default function AppContextProvider({ children }) {
     setTotalBalanceTrusted: (count) => {
       dispatch({ type: "SET_TOTAL_BALANCE_TRUSTED", payload: count });
     },
+    setCustodyFee: (fee) => {
+      dispatch({ type: "SET_CUSTODY_FEE", payload: fee });
+    },
 
     // ui
     setNotification: (notification) => {
@@ -99,11 +106,14 @@ export default function AppContextProvider({ children }) {
     setShowAddTrustForm: (boolean) => {
       dispatch({ type: "SET_SHOW_ADD_TRUST_FORM", payload: boolean });
     },
-    setShowViewBeneficiaryDialog: (boolean) => {
-      dispatch({ type: "SET_SHOW_VIEW_BENEFICIARY_DIALOG", payload: boolean });
+    setShowUpdateTrustForm: (boolean) => {
+      dispatch({ type: "SET_SHOW_UPDATE_TRUST_FROM", payload: boolean });
     },
     setIsButtonDisabled: (boolean) => {
       dispatch({ type: "SET_IS_BUTTON_DISABLED", payload: boolean });
+    },
+    setShowTab: (tab) => {
+      dispatch({ type: "SET_SHOW_TAB", payload: tab });
     },
 
     // auth

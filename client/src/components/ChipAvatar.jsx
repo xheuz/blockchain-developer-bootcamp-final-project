@@ -11,11 +11,11 @@ export default function ChipAvatar({ address }) {
     <Chip
       avatar={
         <Avatar>
-          <Gavatar hash={address} />
+          <Gavatar hash={`${address}`.toUpperCase()} />
         </Avatar>
       }
       label={shortenAddress(address)}
-      color="primary"
+      color="default"
       sx={{ fontWeight: "bold" }}
     />
   );

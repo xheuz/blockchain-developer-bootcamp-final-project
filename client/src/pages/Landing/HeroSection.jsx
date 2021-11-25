@@ -8,22 +8,25 @@ import { ReactComponent as LogoIcon } from "../../assets/logo.svg";
 
 import { WalletConnectButton } from "../../components/Button";
 
+const styles = {
+  section: {
+    flexGrow: 1,
+    position: "absolute",
+    bottom: 0,
+    top: 0,
+    right: 0,
+    left: 0,
+    display: "flex",
+    alignItems: "center",
+  },
+  logoAndBrand: { flexGrow: 1, textAlign: "center", marginBottom: 10 },
+};
+
 export default function HeroSection() {
   return (
-    <Section
-      sx={{
-        flexGrow: 1,
-        position: "absolute",
-        bottom: 0,
-        top: 0,
-        right: 0,
-        left: 0,
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
+    <Section sx={styles.section}>
       <Stack spacing={10}>
-        <Box sx={{ flexGrow: 1, textAlign: "center", marginBottom: 10 }}>
+        <Box sx={styles.logoAndBrand}>
           <LogoIcon width={"12em"} />
           <Typography
             variant="h2"

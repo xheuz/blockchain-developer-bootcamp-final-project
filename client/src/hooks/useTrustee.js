@@ -95,6 +95,8 @@ export function useTestator() {
         .setCheckInFrequencyInDays(days)
         .send({ from: currentAccount });
 
+      await fetchProfile();
+
       setNotification({
         ...notification,
         open: true,
@@ -189,14 +191,7 @@ export function useTestator() {
       setCheckInDeadline(timestampToDate(checkInDeadline[0]));
       setCheckInFrequencyInDays(secondsToDays(checkInFrequencyInDays));
       setBalanceInTrusts(web3.utils.fromWei(balanceInTrusts, "ether"));
-    } catch (error) {
-      setNotification({
-        ...notification,
-        open: true,
-        message: "Network issue was detected, please refresh your browser.",
-        severity: "error",
-      });
-    }
+    } catch (error) {}
   };
 
   return {

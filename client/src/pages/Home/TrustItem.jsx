@@ -17,26 +17,40 @@ import { useAppContext } from "../../state/hooks";
 import { shortenAddress, timestampToDate } from "../../utils/format";
 import { TrustState } from "../../constants";
 
+const styles = {
+  global: {
+    backgroundColor: "#00AB55",
+    color: "#FFFFFF",
+  },
+  card: {
+    new: { borderRadius: 8, borderStyle: "dashed", borderColor: "#00AB55" },
+    newContent: { flexGrow: 1, color: "white", padding: 1 },
+    status: {
+      flexGrow: 1,
+      backgroundColor: "#00AB55",
+      color: "white",
+      padding: 1,
+    },
+  },
+};
+
 export default function TrustItem({ trust, action, isTestator, addNew }) {
   const { web3 } = useAppContext();
 
   if (addNew) {
     return (
-      <Card
-        elevation={2}
-        sx={{ borderRadius: 8, borderStyle: "dashed", borderColor: "#69798E" }}
-      >
+      <Card elevation={2} sx={styles.card.new}>
         <CardActionArea>
           <CardHeader
             avatar={
-              <Avatar aria-label="beneficiary">
+              <Avatar aria-label="beneficiary" sx={styles.global}>
                 <AddModeratorOutlinedIcon />
               </Avatar>
             }
             title="Beneficiary Address"
             subheader="Eth Balance"
           />
-          <CardContent sx={{ flexGrow: 1, color: "white", padding: 1 }}>
+          <CardContent sx={styles.card.newContent}>
             <Typography variant="h6" component="div" textAlign="center">
               Add Trust
             </Typography>
@@ -47,13 +61,14 @@ export default function TrustItem({ trust, action, isTestator, addNew }) {
   }
 
   const isPending = Number(trust.state) === 0;
+  const gavatarAddress = isTestator ? trust.beneficiary : trust.testator;
 
   return (
     <Card elevation={2} sx={{ borderRadius: 8 }}>
       <CardHeader
         avatar={
-          <Avatar aria-label="beneficiary">
-            <Gavatar hash={trust.beneficiary} />
+          <Avatar aria-label="trust">
+            <Gavatar hash={gavatarAddress} />
           </Avatar>
         }
         action={
@@ -79,7 +94,7 @@ export default function TrustItem({ trust, action, isTestator, addNew }) {
         }
         title={
           <Typography variant="subtitle1" component="div">
-            {shortenAddress(trust.beneficiary)}
+            {shortenAddress(gavatarAddress)}
           </Typography>
         }
         subheader={
@@ -88,14 +103,7 @@ export default function TrustItem({ trust, action, isTestator, addNew }) {
           </Typography>
         }
       />
-      <Box
-        sx={{
-          flexGrow: 1,
-          backgroundColor: "#00AB55",
-          color: "white",
-          padding: 1,
-        }}
-      >
+      <Box sx={styles.card.status}>
         <Typography variant="caption" component="div" textAlign="center">
           {TrustState[trust.state].toLowerCase()}
         </Typography>

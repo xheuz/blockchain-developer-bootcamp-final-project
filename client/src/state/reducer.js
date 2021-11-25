@@ -13,16 +13,20 @@ const reducer = (state, { type, payload }) => {
       return { ...state, totalBeneficiaries: payload };
     case "SET_TOTAL_BALANCE_TRUSTED":
       return { ...state, totalBalanceTrusted: payload };
+    case "SET_CUSTODY_FEE":
+      return { ...state, custodyFee: payload / 1000 };
 
     /** UI */
     case "SET_NOTIFICATION":
       return { ...state, notification: payload };
     case "SET_SHOW_ADD_TRUST_FORM":
       return { ...state, showAddTrustForm: payload };
-    case "SET_SHOW_VIEW_BENEFICIARY_DIALOG":
-      return { ...state, showViewBeneficiaryDialog: payload };
+    case "SET_SHOW_UPDATE_TRUST_FROM":
+      return { ...state, showUpdateTrustForm: payload };
     case "SET_IS_BUTTON_DISABLED":
       return { ...state, isButtonDisabled: payload };
+    case "SET_SHOW_TAB":
+      return { ...state, showTab: payload };
 
     /** Auth */
     case "SET_IS_CONNECTED":
@@ -53,8 +57,8 @@ const reducer = (state, { type, payload }) => {
     /** Dependencies */
     case "SET_WEB3":
       return { ...state, web3: payload };
-    
-      default:
+
+    default:
       return state;
   }
 };

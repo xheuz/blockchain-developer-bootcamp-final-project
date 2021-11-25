@@ -1,4 +1,5 @@
 import React from "react";
+import Box from "@mui/system/Box";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -9,7 +10,7 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import EthereumIcon from "../../components/EthereumIcon";
 import Page from "../../components/Page";
 import TrustedCard from "./TrustedCard";
-import TrustsDetailsCard from "./TrustsDetailsCard";
+import TrustsLists from "./TrustsLists";
 import WalletCard from "./WalletCard";
 
 import { useAppContext } from "../../state/hooks";
@@ -26,16 +27,14 @@ export default function Home() {
     checkInFrequencyInDays,
     balanceInTrusts,
     trusts,
-    beneficiaryTrusts,
     setBalance,
+    setShowTab
   } = useAppContext();
   const { fetchBalance } = useWeb3();
-  const { fetchBeneficiaryTrusts, claimTrust } = useBeneficiary();
+  const { fetchBeneficiaryTrusts } = useBeneficiary();
   const {
     fetchProfile,
     fetchTrusts,
-    createTrust,
-    cancelTrust,
     updateCheckInDeadline,
     updateCheckInFrequencyInDays,
   } = useTestator();
@@ -46,6 +45,8 @@ export default function Home() {
       fetchTrusts();
       fetchBeneficiaryTrusts();
       fetchBalance(currentAccount, setBalance);
+      // reset tab view
+      setShowTab(0);
     }
   }, [currentAccount, chainId, balanceInTrusts, balance]);
 
@@ -54,7 +55,13 @@ export default function Home() {
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12}>
           <Typography variant="h6" component="div">
-            Welcome {trusts.length ? "back!" : "to"}
+            Welcome {trusts.length ? ` back, ` : null}
+            <>
+              <Typography variant="subtitle1" component="span" color="primary">
+                {shortenAddress(currentAccount)}
+              </Typography>
+              !
+            </>
           </Typography>
           <Typography
             variant="h4"
@@ -71,15 +78,21 @@ export default function Home() {
               width: 64,
               height: 64,
               padding: 1,
+              backgroundColor: "#00AB55",
             }}
             address={currentAccount}
             balance={balance}
+            updateCheckInFrequencyInDays={updateCheckInFrequencyInDays}
+            isTestator={trusts.length}
           />
         </Grid>
         <Grid item xs={12} sm={6} hidden={!trusts.length}>
           <TrustedCard
-            avatarIcon={<SecurityOutlinedIcon /*sx={{ fontSize: 35 }}*/ />}
+            avatarIcon={<SecurityOutlinedIcon sx={{ fontSize: 35 }} />}
             avatarProps={{
+              width: 56,
+              height: 56,
+              backgroundColor: "#007B55",
               color: "#FFFFFF",
               padding: 1,
             }}
@@ -89,89 +102,32 @@ export default function Home() {
         </Grid>
         <Grid item xs={12} sm={6} hidden={!trusts.length}>
           <TrustedCard
-            avatarIcon={<VerifiedUserOutlinedIcon />}
+            avatarIcon={<VerifiedUserOutlinedIcon sx={{ fontSize: 35 }} />}
             avatarProps={{
+              width: 56,
+              height: 56,
+              backgroundColor: "#007B55",
               color: "#FFFFFF",
               padding: 1,
             }}
             title="Trusts Locked Until"
             subheader={`${new Date(checkInDeadline).toDateString()}`}
             action={
-              <IconButton onClick={updateCheckInDeadline}>
-                <UpdateOutlinedIcon color="warning" />
-              </IconButton>
+              <Box sx={{ textAlign: "right" }}>
+                <IconButton onClick={updateCheckInDeadline}>
+                  <UpdateOutlinedIcon color="warning" />
+                </IconButton>
+                <Typography variant="caption" component="div">
+                  +{checkInFrequencyInDays} days
+                </Typography>
+              </Box>
             }
           />
         </Grid>
         <Grid item xs={12}>
-          <TrustsDetailsCard
-            trusts={trusts}
-            beneficiaryTrusts={beneficiaryTrusts}
-            createTrust={createTrust}
-            cancelTrust={cancelTrust}
-            claimTrust={claimTrust}
-          />
+          <TrustsLists />
         </Grid>
       </Grid>
-      {/* 
-      <h2>Testator</h2>
-      <div>
-        <button
-          onClick={async () =>
-            await createTrust("0x27Cc1710aF9637e49c393B23222c883189d5282f", "1")
-          }
-          >
-          createTrust
-        </button>
-      </div>
-
-      <div>
-        <button onClick={async () => await cancelTrust(0)}>cancelTrust</button>
-      </div>
-
-      <div>
-        <button onClick={updateCheckInDeadline}>updateCheckInDeadline</button>
-      </div>
-
-      <div>
-        <button onClick={() => updateCheckInFrequencyInDays(60)}>
-          updateCheckInFrequencyInDays
-        </button>
-      </div>
-
-      <div>
-        <button onClick={fetchProfile}>fetchProfile</button>
-        <p>checkInDeadline: {checkInDeadline}</p>
-        <p>checkInFrequencyInDays: {checkInFrequencyInDays}</p>
-        <p>balanceInTrusts: {balanceInTrusts}</p>
-      </div>
-
-      <div>
-        <button onClick={fetchTrusts}>fetchBeneficiaryTrusts</button>
-        {trusts.map((t, indx) => (
-          <div key={indx}>
-            <div>{t.id}</div>
-            <div>{TrustState[t.state]}</div>
-            <div>{t.balance}</div>
-            <div>{t.testator}</div>
-            <div>{t.timestamp}</div>
-          </div>
-        ))}
-      </div>
-
-      <h2>Beneficiary</h2>
-      <div>
-        <button onClick={fetchBeneficiaryTrusts}>fetchBeneficiaryTrusts</button>
-        {beneficiaryTrusts.map((t, indx) => (
-          <div key={indx}>
-            <div>{t.id}</div>
-            <div>{TrustState[t.state]}</div>
-            <div>{t.balance}</div>
-            <div>{t.testator}</div>
-            <div>{t.timestamp}</div>
-          </div>
-        ))}
-      </div> */}
     </Page>
   );
 }
