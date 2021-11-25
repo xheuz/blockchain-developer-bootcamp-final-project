@@ -15,10 +15,10 @@ const reducer = (state, { type, payload }) => {
       return { ...state, totalBalanceTrusted: payload };
 
     /** UI */
-    case "SET_SHOW_PAGE":
-      return { ...state, showPage: payload };
-    case "SET_SHOW_ADD_BENEFICIARY_DIALOG":
-      return { ...state, showAddBeneficiaryDialog: payload };
+    case "SET_NOTIFICATION":
+      return { ...state, notification: payload };
+    case "SET_SHOW_ADD_TRUST_FORM":
+      return { ...state, showAddTrustForm: payload };
     case "SET_SHOW_VIEW_BENEFICIARY_DIALOG":
       return { ...state, showViewBeneficiaryDialog: payload };
     case "SET_IS_BUTTON_DISABLED":
@@ -38,17 +38,17 @@ const reducer = (state, { type, payload }) => {
     case "SET_CHECK_IN_FREQUENCY_IN_DAYS":
       return { ...state, checkInFrequencyInDays: payload };
     case "SET_BALANCE_IN_TRUSTS":
-      return { ...state, setBalanceInTrusts: payload };
+      return { ...state, balanceInTrusts: payload };
     case "SET_TRUSTS":
-      return { ...state, setTrusts: payload };
+      return { ...state, trusts: payload };
     case "SET_SELECTED_TRUST":
-      return { ...state, setSelectedTrust: payload };
+      return { ...state, selectedTrust: payload };
 
     /** Beneficiary */
     case "SET_BENEFICIARY_TRUSTS":
-      return { ...state, setBeneficiaryTrusts: payload };
+      return { ...state, beneficiaryTrusts: payload };
     case "SET_SELECTED_BENEFICIARY_TRUST":
-      return { ...state, setBeneficiaryTrusts: payload };
+      return { ...state, selectedBeneficiaryTrusts: payload };
 
     /** Dependencies */
     case "SET_WEB3":

@@ -1,27 +1,19 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+
 import { useAppContext } from "../state/hooks";
 import { useWeb3 } from "../hooks/useWeb3";
-
-export const useSelectedAccount = () => {
-  const { currentAccount } = useAppContext();
-
-  const hasAccountPermission = () => {
-    return window.ethereum.selectedAddress === currentAccount;
-  };
-
-  return { hasAccountPermission };
-};
 
 // Events
 // https://docs.metamask.io/guide/ethereum-provider.html#events
 export const useEventAccountsChanged = () => {
   const { fetchBalance } = useWeb3();
-  const { hasAccountPermission } = useSelectedAccount();
   const { setCurrentAccount, setIsConnected, setBalance } = useAppContext();
 
-  const handleConnection = async (accounts) => {
-    console.log("accountsChanged", accounts);
-    if (!accounts[0]) return;
+  const handleAccountChange = async (accounts) => {
+    if (!accounts.length) {
+      setIsConnected(false);
+      return;
+    }
 
     setCurrentAccount(accounts);
     setIsConnected(true);
@@ -32,9 +24,9 @@ export const useEventAccountsChanged = () => {
     if (window.ethereum) {
       const { ethereum } = window;
 
-      ethereum.on("accountsChanged", handleConnection);
+      ethereum.on("accountsChanged", handleAccountChange);
       return () => {
-        ethereum.removeListener("accountsChanged", handleConnection);
+        ethereum.removeListener("accountsChanged", handleAccountChange);
       };
     }
   });
@@ -53,25 +45,4 @@ export const useEventChainChanged = () => {
       };
     }
   });
-};
-
-export const useEventMessage = () => {
-  const [message, setMessage] = useState({ type: "", data: null });
-
-  useEffect(() => {
-    function handleMessage(message) {
-      setMessage(message);
-    }
-
-    if (window.ethereum) {
-      const { ethereum } = window;
-      ethereum.on("message", handleMessage);
-
-      return () => {
-        ethereum.removeListener("message", handleMessage);
-      };
-    }
-  });
-
-  return message;
 };

@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
 
 import { ReactComponent as MetamaskOriginalIcon } from "../assets/metamask.svg";
+import { useAppContext } from "../state/hooks";
 import { useMetamaskConnect } from "../hooks/useWeb3";
 
 export default function StyledButton({ children, ...props }) {
@@ -12,7 +13,8 @@ export default function StyledButton({ children, ...props }) {
       style={{
         textTransform: "capitalize",
         fontWeight: "bold",
-        borderRadius: 50,
+        fontSize: 15,
+        borderRadius: 20,
       }}
       {...props}
     >
@@ -22,18 +24,25 @@ export default function StyledButton({ children, ...props }) {
 }
 
 export function WalletConnectButton() {
-  const connect = useMetamaskConnect();
+  const connectToMetamask = useMetamaskConnect();
+  const { isButtonDisabled } = useAppContext();
+
   return (
     <StyledButton
       size="small"
       startIcon={
-        <Avatar variant="rounded">
+        <Avatar
+          sx={{ bgcolor: "transparent !important", width: 26, height: 25 }}
+          variant="rounded"
+        >
           <MetamaskOriginalIcon />
         </Avatar>
       }
-      onClick={connect}
+      onClick={!isButtonDisabled ? connectToMetamask : null}
+      disabled={isButtonDisabled}
+      sx={{ p: 2, paddingLeft: 3, paddingRight: 3 }}
     >
-      Connect
+      Connect Metamask
     </StyledButton>
   );
 }

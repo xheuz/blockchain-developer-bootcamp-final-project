@@ -2,12 +2,7 @@ import { useContext, useEffect } from "react";
 
 import { AppContext } from "./index";
 
-import {
-  useWeb3Setup,
-  useWeb3SetupContract,
-  useWeb3IsConnected,
-} from "../hooks/useWeb3";
-
+import { useWeb3Setup, useWeb3SetupContract, useWeb3IsConnected } from "../hooks/useWeb3";
 import {
   useEventAccountsChanged,
   useEventChainChanged,
@@ -18,18 +13,15 @@ export const useAppContext = () => useContext(AppContext);
 export const useEventOnLoad = () => {
   const initWeb3 = useWeb3Setup();
   const setupContract = useWeb3SetupContract();
-  const {
-    web3,
-    chainId,
-    currentAccount,
-    setIsConnected
-  } = useAppContext();
+  const { web3 } = useAppContext();
+  const checkIfConnected = useWeb3IsConnected();
   useEventAccountsChanged();
   useEventChainChanged();
 
   useEffect(() => {
     const handleOnLoad = async () => {
       await setupContract();
+      await checkIfConnected();
     };
 
     if (web3) handleOnLoad();
@@ -39,9 +31,4 @@ export const useEventOnLoad = () => {
       window.removeEventListener("load", initWeb3);
     };
   }, [web3]);
-
-  useEffect(() => {
-    // keeps checking if connected
-    if (!currentAccount) setIsConnected(false);
-  }, [chainId, currentAccount]);
 };

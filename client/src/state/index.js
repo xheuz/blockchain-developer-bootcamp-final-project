@@ -18,10 +18,17 @@ export const initialState = {
   setTotalBalanceTrusted: () => {},
 
   // ui
-  showPage: "fab",
-  setShowPage: () => {},
-  showAddBeneficiaryDialog: false,
-  setShowAddBeneficiaryDialog: () => {},
+  notification: {
+    open: false,
+    vertical: "top",
+    horizontal: "center",
+    severity: null,
+    message: null,
+    autoHideDuration: 4000,
+  },
+  setNotification: () => {},
+  showAddTrustForm: false,
+  setShowAddTrustForm: () => {},
   showViewBeneficiaryDialog: false,
   setShowViewBeneficiaryDialog: () => {},
   isButtonDisabled: false,
@@ -86,11 +93,11 @@ export default function AppContextProvider({ children }) {
     },
 
     // ui
-    setShowPage: (integer) => {
-      dispatch({ type: "SET_SHOW_PAGE", payload: integer });
+    setNotification: (notification) => {
+      dispatch({ type: "SET_NOTIFICATION", payload: notification });
     },
-    setShowAddBeneficiaryDialog: (boolean) => {
-      dispatch({ type: "SET_SHOW_ADD_BENEFICIARY_DIALOG", payload: boolean });
+    setShowAddTrustForm: (boolean) => {
+      dispatch({ type: "SET_SHOW_ADD_TRUST_FORM", payload: boolean });
     },
     setShowViewBeneficiaryDialog: (boolean) => {
       dispatch({ type: "SET_SHOW_VIEW_BENEFICIARY_DIALOG", payload: boolean });

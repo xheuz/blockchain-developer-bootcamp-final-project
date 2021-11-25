@@ -29,20 +29,24 @@ function CounterBox({ name, count }) {
   );
 }
 export default function CountersSection() {
-  const { testatorsCount, beneficiariesCount } = useAppContext();
+  const { totalTestators, totalBeneficiaries, totalBalanceTrusted } = useAppContext();
   const counters = [
     {
       name: "Testators",
-      count: testatorsCount,
+      count: totalTestators,
     },
     {
       name: "Beneficiaries",
-      count: beneficiariesCount,
+      count: totalBeneficiaries,
+    },
+    {
+      name: "Balance",
+      count: totalBalanceTrusted,
     },
   ];
 
   return (
-    <Section sx={{ padding: 2, flexGrow: 1, backgroundColor: "#00AB55" }}>
+    <Section sx={{ padding: 2, flexGrow: 1}}>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
         {counters.map((e, index) => (
           <CounterBox {...e} key={index} />

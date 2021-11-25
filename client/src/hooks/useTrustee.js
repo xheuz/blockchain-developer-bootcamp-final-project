@@ -1,46 +1,51 @@
-import { useEffect } from "react";
-
 import { useAppContext } from "../state/hooks";
 import { useWeb3 } from "../hooks/useWeb3";
-
-export function useContractGlobals() {
-  const { contract } = useWeb3();
-  const { setTotalTestators, setTotalBeneficiaries, setTotalBalanceTrusted } =
-    useAppContext();
-
-  const fetchContractGlobals = async () => {
-    try {
-      setTotalTestators(await contract.methods.totalTestators());
-      setTotalBeneficiaries(await contract.methods.totalBeneficiaries());
-      setTotalBalanceTrusted(await contract.methods.totalBalanceTrusted());
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    if (contract) fetchContractGlobals();
-  }, [contract]);
-}
+import { secondsToDays, timestampToDate } from "../utils/format";
 
 export function useBeneficiary() {
   const { fetchBalance } = useWeb3();
-  const { contract, currentAccount, setBalance, setBeneficiaries } =
-    useAppContext();
+  const {
+    contract,
+    currentAccount,
+    notification,
+    setBalance,
+    setBeneficiaryTrusts,
+    setNotification,
+  } = useAppContext();
 
-  const fetchTrusts = async () => {
-    setBeneficiaries(
-      await contract.methods.beneficiaryTrusts().call({ from: currentAccount })
-    );
+  const fetchBeneficiaryTrusts = async () => {
+    try {
+      const trusts = await contract.methods
+        .beneficiaryTrusts()
+        .call({ from: currentAccount });
+      setBeneficiaryTrusts(trusts);
+    } catch (error) {
+      setBeneficiaryTrusts([]);
+    }
   };
 
   const claimTrust = async (trustId) => {
-    await contract.methods.claimTrust(trustId).call({ from: currentAccount });
-    await fetchBalance(currentAccount, setBalance);
+    try {
+      await contract.methods.claimTrust(trustId).call({ from: currentAccount });
+      await fetchBalance(currentAccount, setBalance);
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Trust claimed!",
+        severity: "success",
+      });
+    } catch (error) {
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Trust can not be claimed yet.",
+        severity: "info",
+      });
+    }
   };
 
   return {
-    fetchTrusts,
+    fetchBeneficiaryTrusts,
     claimTrust,
   };
 }
@@ -52,37 +57,58 @@ export function useTestator() {
     balance,
     contract,
     currentAccount,
+    notification,
+    checkInFrequencyInDays,
+    setNotification,
     setBalance,
-    setLastCheckIn,
+    setCheckInDeadline,
     setCheckInFrequencyInDays,
+    setBalanceInTrusts,
     setTrusts,
-    setTrustBalance,
   } = useAppContext();
 
-  const fetchLastCheckIn = async () => {
-    setLastCheckIn(
-      new Date(
-        await contract.methods.getLastCheckIn().call({ from: currentAccount })
-      ).toDateString()
-    );
-  };
-
-  const fetchCheckInFrequencyInDays = async () => {
-    setCheckInFrequencyInDays(
+  const updateCheckInDeadline = async () => {
+    try {
       await contract.methods
-        .getCheckInFrequencyInDays()
-        .call({ from: currentAccount })
-    );
-  };
+        .setCheckInDeadline()
+        .send({ from: currentAccount });
 
-  const updateLastCheckIn = async () => {
-    await contract.methods.setLastCheckIn().call({ from: currentAccount });
+      setNotification({
+        ...notification,
+        open: true,
+        message: `Deadline updated ${checkInFrequencyInDays} days more.`,
+        severity: "success",
+      });
+    } catch (error) {
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Unable to update deadline.",
+        severity: "error",
+      });
+    }
   };
 
   const updateCheckInFrequencyInDays = async (days) => {
-    await contract.methods
-      .setCheckInFrequencyInDays(days)
-      .call({ from: currentAccount });
+    try {
+      await contract.methods
+        .setCheckInFrequencyInDays(days)
+        .send({ from: currentAccount });
+
+      setNotification({
+        ...notification,
+        open: true,
+        message: `Check-In frequency updated.`,
+        severity: "success",
+      });
+    } catch (error) {
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Unable to update check-in frequency.",
+        severity: "error",
+      });
+    }
   };
 
   const createTrust = async (address, amount) => {
@@ -95,11 +121,28 @@ export function useTestator() {
         });
         // fetch balance
         await fetchBalance(currentAccount, setBalance);
+
+        setNotification({
+          ...notification,
+          open: true,
+          message: `Trust created successfully.`,
+          severity: "success",
+        });
       } catch (error) {
-        console.error(error);
+        setNotification({
+          ...notification,
+          open: true,
+          message: "Unable to create a trust.",
+          severity: "error",
+        });
       }
     } else {
-      console.error("Not enough balance.");
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Please check your balance and try again.",
+        severity: "error",
+      });
     }
   };
 
@@ -107,8 +150,20 @@ export function useTestator() {
     try {
       await contract.methods.cancelTrust(_id).send({ from: currentAccount });
       await fetchBalance(currentAccount, setBalance);
+
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Trust was canceled.",
+        severity: "success",
+      });
     } catch (error) {
-      console.error(error);
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Unable to cancel trust.",
+        severity: "error",
+      });
     }
   };
 
@@ -124,71 +179,32 @@ export function useTestator() {
 
   const fetchProfile = async () => {
     try {
-      setProfile(
-        await contract.methods.testatorDetails().call({ from: currentAccount })
-      );
-    } catch (err) {
-      setProfile({});
+      const profile = await contract.methods
+        .testatorDetails()
+        .call({ from: currentAccount });
+
+      const { checkInDeadline, checkInFrequencyInDays, balanceInTrusts } =
+        profile;
+
+      setCheckInDeadline(timestampToDate(checkInDeadline[0]));
+      setCheckInFrequencyInDays(secondsToDays(checkInFrequencyInDays));
+      setBalanceInTrusts(web3.utils.fromWei(balanceInTrusts, "ether"));
+    } catch (error) {
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Network issue was detected, please refresh your browser.",
+        severity: "error",
+      });
     }
   };
 
-  const fetchTrustBalance = async (address) =>
-    await fetchBalance(address, setTrustBalance);
-
   return {
-    updateLastCheckIn,
+    updateCheckInDeadline,
     updateCheckInFrequencyInDays,
     createTrust,
     cancelTrust,
     fetchTrusts,
-    fetchTrustBalance,
     fetchProfile,
   };
-}
-
-/**
- * Events
- */
-
-export async function useAllEvents() {
-  const { contract, currentAccount } = useAppContext();
-  //   const { removeBeneficiary, setBeneficiaries } =
-  //     useBeneficiaryContext();
-
-  useEffect(() => {
-    const handleEvents = (error, events) => {
-      if (error) {
-        console.error(error);
-        return;
-      }
-      console.log(events.event);
-
-      switch (events.event) {
-        case "BeneficiaryAdded":
-          return;
-        case "BeneficiaryRemoved":
-          return;
-        case "BeneficiaryChanged":
-          return;
-        case "LastCheckInUpdated":
-          return;
-        case "CheckInFrequencyUpdated":
-          return;
-        case "Deposited":
-          return;
-        case "TrustClaimed":
-          return;
-        default:
-      }
-    };
-
-    if (contract) {
-      contract.events.allEvents(
-        {
-          filter: { testator: currentAccount },
-        },
-        handleEvents
-      );
-    }
-  }, [contract]);
 }

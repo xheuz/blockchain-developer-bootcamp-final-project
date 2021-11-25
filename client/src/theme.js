@@ -7,6 +7,7 @@ const theme = createTheme({
     fontFamily: `"Public Sans", "Roboto", "Helvetica", "Arial", "sans-serif"`,
   },
   palette: {
+    mode: "dark",
     primary: {
       main: "#00AB55",
       light: "#5BE584",
@@ -38,6 +39,14 @@ const theme = createTheme({
       A400: "#C4CDD5",
       A700: "#454F5B",
     },
+    // background: {
+    //   default: "#F5F5F5",
+    //   paper: "#FFFFFF"
+    // }
+    background: {
+      default: "#151C23",
+      paper: "#202A35"
+    }
   },
 });
 

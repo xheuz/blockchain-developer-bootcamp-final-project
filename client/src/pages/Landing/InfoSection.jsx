@@ -58,7 +58,7 @@ export default function InfoSection() {
     <Section
       title="Become a Testator"
       subtitle={`A testator is a wise person who keeps loving even when it's gone.`}
-      sx={{ padding: 2, flexGrow: 1, backgroundColor: "#FAFAFA" }}
+      sx={{ padding: 2, flexGrow: 1 }}
     >
       <Stack
         direction={{ xs: "column", sm: "row" }}
