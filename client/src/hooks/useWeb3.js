@@ -78,7 +78,7 @@ export function useWeb3IsConnected() {
 
     try {
       const accounts = await web3.eth.getAccounts();
-      if (accounts.length > 0) {
+      if (accounts.length === 1) {
         setIsConnected(true);
         setCurrentAccount(accounts);
         fetchBalance(accounts[0], setBalance);
