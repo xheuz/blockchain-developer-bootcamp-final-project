@@ -2,7 +2,7 @@ import Web3 from "web3";
 
 import { DAPP_CONTRACT } from "../config";
 import { useAppContext } from "../state/hooks";
-import {numberToFixed} from "../utils/format";
+import { numberToFixed } from "../utils/format";
 
 export function useWeb3Setup() {
   const { setWeb3 } = useAppContext();
@@ -32,11 +32,13 @@ export function useWeb3Setup() {
 export function useWeb3SetupContract() {
   const {
     web3,
+    notification,
     setContract,
     setTotalTestators,
     setTotalBeneficiaries,
     setTotalBalanceTrusted,
-    setCustodyFee
+    setCustodyFee,
+    setNotification,
   } = useAppContext();
 
   const useContract = async () => {
@@ -47,7 +49,12 @@ export function useWeb3SetupContract() {
     const deployedNetwork = DAPP_CONTRACT.networks[networkId];
 
     if (!deployedNetwork) {
-      alert("Select correct network!");
+      setNotification({
+        ...notification,
+        open: true,
+        message: "Select Ropsten network!",
+        severity: "info",
+      });
       return;
     }
 
