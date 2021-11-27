@@ -1,5 +1,7 @@
 # Environment
 
+_You can check all your environment after completing setup of the project_
+
 - Check macOS version
 
 ```bash
@@ -33,7 +35,14 @@ Web3.js v1.5.3
 Ganache CLI v6.12.2 (ganache-core: 2.13.2)
 ```
 
+- Check ganache UI version
+
+```
+Version 2.5.4 (2.5.4.1367)
+```
+
 - docker version 20.10.8
+
 ```bash
 > docker version
 Client:
@@ -66,6 +75,7 @@ Server: Docker Engine - Community
   Version:          0.19.0
   GitCommit:        de40ad0
 ```
+
 - docker-compose version 1.29.2
 
 ```bash
