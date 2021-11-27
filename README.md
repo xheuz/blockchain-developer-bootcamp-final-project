@@ -23,13 +23,9 @@ This project aims to provide a dapp that works as a Trustee. Allowing to leave d
 
 ## Project Walkthrough
 
-### Part 1
+<div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/6adbb17fe51c41cf9ec9875fd5dadde2" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
 
-https://www.loom.com/share/6adbb17fe51c41cf9ec9875fd5dadde2
-
-### Part 2
-
-https://www.loom.com/share/f89ee036dde54eafa5b738f51e160ee1
+<div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/f89ee036dde54eafa5b738f51e160ee1" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
 
 ## Structure
 
